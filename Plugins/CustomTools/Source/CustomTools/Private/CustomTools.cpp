@@ -5,6 +5,10 @@
 #include "CustomToolsCommands.h"
 #include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
+#include "EditorAssetLibrary.h"
+#include "SlateWidget/SFolderCleaningWidget.h"
+#include "ObjectTools.h"
+
 
 static const FName CustomToolsTabName("CustomTools");
 
@@ -14,6 +18,10 @@ void FCustomToolsModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	
+	/* folder cleaner initialization and registration */
+	InitializeMenuExtention();
+	RegisterFolderCleanerTabs();
+
 	FCustomToolsStyle::Initialize();
 	FCustomToolsStyle::ReloadTextures();
 
@@ -77,6 +85,15 @@ void FCustomToolsModule::RegisterMenus()
 			}
 		}
 	}
+}
+
+void FCustomToolsModule::InitializeMenuExtention()
+{
+
+}
+
+void FCustomToolsModule::RegisterFolderCleanerTabs()
+{
 }
 
 #undef LOCTEXT_NAMESPACE

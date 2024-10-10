@@ -24,6 +24,10 @@ private:
 	void RegisterMenus();
 
 
+	void InitializeMenuExtention();
+	void RegisterFolderCleanerTabs();
+
+
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
 };
