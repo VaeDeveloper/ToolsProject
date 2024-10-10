@@ -20,7 +20,7 @@ public:
 	void PluginButtonClicked();
 	
 private:
-
+	//
 	void RegisterMenus();
 
 
