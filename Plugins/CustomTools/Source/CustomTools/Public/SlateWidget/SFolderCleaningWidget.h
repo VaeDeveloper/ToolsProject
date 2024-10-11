@@ -8,7 +8,9 @@
 #include "Widgets/Notifications/SNotificationList.h"
 
 
-class SFolderCleaning : public SComponentWidget
+class SFolderCleaning : public SCompoundWidget
 {
+public:
+	SFolderCleaning(); 
 
 };
