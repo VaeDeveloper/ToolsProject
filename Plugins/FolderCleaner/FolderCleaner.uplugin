@@ -2,23 +2,23 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "CustomTools",
-	"Description": "",
+	"FriendlyName": "FolderCleaner",
+	"Description": "This is custom plugin. all rights reserved.",
 	"Category": "Other",
 	"CreatedBy": "DimAlek",
 	"CreatedByURL": "",
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
-	"CanContainContent": false,
-	"IsBetaVersion": false,
+	"CanContainContent": true,
+	"IsBetaVersion": true,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "CustomTools",
+			"Name": "FolderCleaner",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PreDefault"
 		}
 	]
 }
