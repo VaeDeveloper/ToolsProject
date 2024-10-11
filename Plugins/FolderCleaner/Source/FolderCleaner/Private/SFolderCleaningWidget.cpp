@@ -12,8 +12,8 @@
 #include "IContentBrowserSingleton.h"
 
 #define ListAllAssets TEXT("All Available Assets")
-#define UnusedAssets TEXT("Unused Assets")
-#define AssetWithSameName TEXT("List Assets With Same Name")
+#define UnusedAssets TEXT("List of Unused Assets")
+#define AssetWithSameName TEXT("List Assets With The Same Name")
 
 /**
  * @brief Constructs the SFolderCleaning widget.
