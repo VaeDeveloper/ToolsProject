@@ -11,9 +11,15 @@
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
 
-#define ListAllAssets TEXT("All Available Assets")
-#define UnusedAssets TEXT("List of Unused Assets")
-#define AssetWithSameName TEXT("List Assets With The Same Name")
+
+
+namespace
+{
+	static constexpr float TitleInfoFontTextSize = 30.0f;
+	static FName ListAllAssetsName = TEXT("AllAvailable Assets");
+	static FName ListUnusedAssetsName = TEXT("List of Unused Assets");
+	static FName ListAssetWithSameName = TEXT("List Assets With The Same Name");
+}
 
 /**
  * @brief Constructs the SFolderCleaning widget.
@@ -35,12 +41,12 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 	CheckBoxArray.Empty();
 	AssetDataToDeleteArray.Empty();
 
-	ComboBoxSourceItems.Add(MakeShared<FString>(ListAllAssets));
-	ComboBoxSourceItems.Add(MakeShared<FString>(UnusedAssets));
-	ComboBoxSourceItems.Add(MakeShared<FString>(AssetWithSameName));
+	ComboBoxSourceItems.Add(MakeShared<FString>(ListAllAssetsName.ToString()));
+	ComboBoxSourceItems.Add(MakeShared<FString>(ListUnusedAssetsName.ToString()));
+	ComboBoxSourceItems.Add(MakeShared<FString>(ListAssetWithSameName.ToString()));
 
 	FSlateFontInfo TitleTextFontInfo = GetEmboseedTextFont();
-	TitleTextFontInfo.Size = 30;
+	TitleTextFontInfo.Size = TitleInfoFontTextSize;
 
 	ChildSlot
 		[
@@ -432,17 +438,17 @@ void SFolderCleaning::OnComboSelectionChange(TSharedPtr<FString> SelecetedOption
 
 	FFolderCleanerModule& Module = FModuleManager::LoadModuleChecked<FFolderCleanerModule>(TEXT("FolderCleaner"));
 
-	if (*SelecetedOption.Get() == ListAllAssets)
+	if (*SelecetedOption.Get() == ListAllAssetsName)
 	{
 		DisplayedAssetData = StoredAssetsData;
 		RefreshAssetListView();
 	}
-	else if (*SelecetedOption.Get() == UnusedAssets)
+	else if (*SelecetedOption.Get() == ListUnusedAssetsName)
 	{
 		Module.ListUnusedAssetForAssetList(StoredAssetsData, DisplayedAssetData);
 		RefreshAssetListView();
 	}
-	else if (*SelecetedOption.Get() == AssetWithSameName)
+	else if (*SelecetedOption.Get() == ListAssetWithSameName)
 	{
 		Module.ListSameNameAssetsForAssetList(StoredAssetsData, DisplayedAssetData);
 		RefreshAssetListView();
