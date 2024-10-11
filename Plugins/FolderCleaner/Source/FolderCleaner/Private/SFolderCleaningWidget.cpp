@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "SFolderCleaningWidget.h"
 #include "SlateBasics.h"
 #include "FolderCleaner.h"
@@ -10,8 +9,6 @@
 #include "Widgets/Layout/SBorder.h"
 #include "ContentBrowserModule.h"
 #include "IContentBrowserSingleton.h"
-
-
 
 namespace
 {
@@ -48,13 +45,11 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 	FSlateFontInfo TitleTextFontInfo = GetEmboseedTextFont();
 	TitleTextFontInfo.Size = TitleInfoFontTextSize;
 
-	ChildSlot
-		[
-			SNew(SVerticalBox)
+	/* clang-format off */
+	ChildSlot[SNew(SVerticalBox)
 
 				// Title of the widget
-				+ SVerticalBox::Slot()
-				.AutoHeight()
+				+ SVerticalBox::Slot().AutoHeight()
 				[
 					SNew(STextBlock)
 						.Text(FText::FromString(TEXT("FolderCleaner")))
@@ -65,35 +60,25 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 				]
 
 				// Combo Box for asset selection
-				+ SVerticalBox::Slot()
-				.AutoHeight()
+				+ SVerticalBox::Slot().AutoHeight()
 				[
-					SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot()
+					SNew(SHorizontalBox) +
+						SHorizontalBox::Slot()
 						.AutoWidth()
 						[
 							ConstructComboBox()
 						]
 
 
-						//TODO в будущем надо вынести эту кнопку в отдельное окно, либо сделать ее сверху возле директории 
-
-						//+ SHorizontalBox::Slot()
-						//.FillWidth(10.0f)
-						//.Padding(5.0f)
-						//[
-						//    ConstructDeleteAllEmtpyFolderButton()
-						//]
-
-						// Help text for the combo box selection
-						+SHorizontalBox::Slot()
+				// Help text for the combo box selection
+				+ SHorizontalBox::Slot()
 						.FillWidth(0.6f)
 						[
 							ConstructComboHelpTexts(TEXT("Specify the listing condition in the drop. Left mouse click to go to where asset"), ETextJustify::Center)
 						]
 
-						// Current folder display
-						+ SHorizontalBox::Slot()
+												  // Current folder display
+				+ SHorizontalBox::Slot()
 						.FillWidth(0.1f)
 						[
 							ConstructComboHelpTexts(TEXT("Current Folder: \n") + InArgs._CurrentSelectedFolder, ETextJustify::Right)
@@ -101,47 +86,37 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 				]
 
 				// Scrollable asset list view
-				+ SVerticalBox::Slot()
-				.VAlign(VAlign_Fill)
+				+ SVerticalBox::Slot().VAlign(VAlign_Fill)
 				[
-					SNew(SScrollBox)
-						+ SScrollBox::Slot()
-						[
-							ConstructAssetListView()
-						]
-
+					SNew(SScrollBox) + SScrollBox::Slot()[ConstructAssetListView()]
 				]
 
 				// Control buttons: Delete All, Select All, Deselect All
-				+ SVerticalBox::Slot()
-				.AutoHeight()
+				+ SVerticalBox::Slot().AutoHeight()
 				[
-					SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot()
+					SNew(SHorizontalBox) +
+						SHorizontalBox::Slot()
 						.FillWidth(10.0f)
 						.Padding(5.0f)
 						[
-							ConstructDeleteAllButton() // Constructs the button to delete all selected assets
+							ConstructDeleteAllButton()	// Constructs the button to delete all selected assets
 						]
 
-						+ SHorizontalBox::Slot()
+				+ SHorizontalBox::Slot()
 						.FillWidth(10.0f)
 						.Padding(5.0f)
 						[
-							ConstructSelectAllButton() // Constructs the button to select all assets
+							ConstructSelectAllButton()  // Constructs the button to select all assets
 						]
-
-						+ SHorizontalBox::Slot()
-						.FillWidth(10.0f)
+				+ SHorizontalBox::Slot().
+						FillWidth(10.0f)
 						.Padding(5.0f)
 						[
-							ConstructDeselectAllButton()// Constructs the button to deselect all assets
+							ConstructDeselectAllButton()	// Constructs the button to deselect all assets
 						]
 				]
-		];
+	];
 }
-
-
 
 /**
  * @brief Constructs the asset list view for displaying assets.

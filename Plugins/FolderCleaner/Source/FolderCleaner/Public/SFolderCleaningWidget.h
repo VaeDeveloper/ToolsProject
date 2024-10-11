@@ -9,7 +9,6 @@
 
 DEFINE_LOG_CATEGORY_STATIC(FolderCleanerLog, All, All);
 
-
 namespace Automation
 {
 	/**
@@ -85,9 +84,6 @@ namespace Automation
 
 }
 
-
-
-
 /**
  * @class SFolderCleaning
  * @brief A widget for managing and cleaning up assets in a specified folder.
@@ -99,21 +95,21 @@ namespace Automation
 class SFolderCleaning : public SCompoundWidget
 {
 	SLATE_BEGIN_ARGS(SFolderCleaning) {}
-		SLATE_ARGUMENT(TArray<TSharedPtr<FAssetData>>, AssetDataToStore)
-		SLATE_ARGUMENT(FString, CurrentSelectedFolder)
+	SLATE_ARGUMENT(TArray<TSharedPtr<FAssetData>>, AssetDataToStore)
+	SLATE_ARGUMENT(FString, CurrentSelectedFolder)
 	SLATE_END_ARGS()
 
 public:
 	/**
-	* Constructs the SFolderCleaning widget.
-	*
-	* @param InArgs The arguments passed to the widget during its construction.
-	*
-	* This method initializes the SAdvancedDeletionTab widget, setting up its layout
-	* and initializing member variables. The widget includes a title, a combo box
-	* for asset selection, a scrollable list of assets, and buttons for deletion
-	* and selection actions.
-	*/
+	 * Constructs the SFolderCleaning widget.
+	 *
+	 * @param InArgs The arguments passed to the widget during its construction.
+	 *
+	 * This method initializes the SAdvancedDeletionTab widget, setting up its layout
+	 * and initializing member variables. The widget includes a title, a combo box
+	 * for asset selection, a scrollable list of assets, and buttons for deletion
+	 * and selection actions.
+	 */
 	void Construct(const FArguments& InArgs);
 
 	/**
@@ -121,11 +117,7 @@ public:
 	 *
 	 * @return A FSlateFontInfo object representing the embossed text font style.
 	 */
-	FSlateFontInfo GetEmboseedTextFont() const
-	{
-		return FCoreStyle::Get().GetFontStyle(FName("EmbossedText"));
-	}
-
+	FSlateFontInfo GetEmboseedTextFont() const { return FCoreStyle::Get().GetFontStyle(FName("EmbossedText")); }
 
 	/**
 	 * Handles the state change of a checkbox associated with a specific asset.
@@ -229,7 +221,6 @@ public:
 	 */
 	TSharedRef<SButton> ConstructOpenAssetButtonForRowWidget(const TSharedPtr<FAssetData>& AssetDataToDisplay);
 
-
 	/**
 	 * Constructs a button widget for deleting all selected assets.
 	 *
@@ -268,7 +259,6 @@ public:
 	 * @return A shared reference to the constructed SButton widget for refreshing the asset list.
 	 */
 	TSharedRef<SButton> RefreshListAssets();
-
 
 	/**
 	 * Constructs a button widget for searching the selected asset in the content browser.
@@ -383,7 +373,7 @@ public:
 	 *
 	 * @return A reply indicating that the event has been handled.
 	 */
-	FReply OnDeselectAllEmptyFolderButtonClicked();	/* clang-format on */
+	FReply OnDeselectAllEmptyFolderButtonClicked(); /* clang-format on */
 
 	/**
 	 * @brief Handles the click event for refreshing the asset list.
@@ -396,7 +386,7 @@ public:
 	FReply OnRefreshListAssets();
 
 #pragma region Data
-	// --- data --- 
+	// --- data ---
 private:
 	/**
 	 * An array of checkboxes corresponding to each asset item in the list view.
@@ -433,6 +423,4 @@ private:
 	 */
 	TSharedPtr<SListView<TSharedPtr<FAssetData>>> ConstructedAssetListView;
 #pragma endregion Data
-
-
 };

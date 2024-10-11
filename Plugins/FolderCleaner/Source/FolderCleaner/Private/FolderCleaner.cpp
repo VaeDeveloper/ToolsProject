@@ -8,7 +8,6 @@
 #include "AssetManagerEditorModule.h"
 #include "AssetViewUtils.h"
 
-
 #define LOCTEXT_NAMESPACE "FFolderCleanerModule"
 
 void FFolderCleanerModule::StartupModule()
@@ -49,10 +48,10 @@ TSharedRef<FExtender> FFolderCleanerModule::CustomMenuExtender(const TArray<FStr
 	TSharedRef<FExtender> MenuExtender(new FExtender());
 	if (SelectedPaths.Num() > 0)
 	{
-		MenuExtender->AddMenuExtension(FName("Delete"),										//
-			EExtensionHook::After,															//
-			TSharedPtr<FUICommandList>(),													//
-			FMenuExtensionDelegate::CreateRaw(this, &FFolderCleanerModule::AddMenuEntry));	//
+		MenuExtender->AddMenuExtension(FName("Delete"),																	//
+									   EExtensionHook::After,															//
+									   TSharedPtr<FUICommandList>(),													//
+									   FMenuExtensionDelegate::CreateRaw(this, &FFolderCleanerModule::AddMenuEntry));	//
 
 		FolderPathsSelected = SelectedPaths;
 	}
@@ -235,13 +234,13 @@ TArray<TSharedPtr<FAssetData>> FFolderCleanerModule::GetAllAssetDataUnderSelecte
 
 	for (const FString& AssetPathName : AssetsPathNames)
 	{
-		if (AssetPathName.Contains(TEXT("Developers")) ||          //
-			AssetPathName.Contains(TEXT("Collections")) ||         //
-			AssetPathName.Contains(TEXT("__ExternalActors__")) ||  //
-			AssetPathName.Contains(TEXT("__ExternalObjects__")))   //
-			continue;                                              //
+		if (AssetPathName.Contains(TEXT("Developers")) ||			//
+			AssetPathName.Contains(TEXT("Collections")) ||			//
+			AssetPathName.Contains(TEXT("__ExternalActors__")) ||	//
+			AssetPathName.Contains(TEXT("__ExternalObjects__")))	//
+			continue;												//
 
-		if (!UEditorAssetLibrary::DoesAssetExist(AssetPathName)) continue;
+		if (! UEditorAssetLibrary::DoesAssetExist(AssetPathName)) continue;
 
 		const FAssetData Data = UEditorAssetLibrary::FindAssetData(AssetPathName);
 		AvaiableAssetsData.Add(MakeShared<FAssetData>(Data));
@@ -249,7 +248,6 @@ TArray<TSharedPtr<FAssetData>> FFolderCleanerModule::GetAllAssetDataUnderSelecte
 
 	return AvaiableAssetsData;
 }
-
 
 /**
  * Deletes a single asset from the asset list.
@@ -268,7 +266,6 @@ bool FFolderCleanerModule::DeleteSingleAssetForAssetList(const FAssetData& Asset
 	return ObjectTools::DeleteAssets(AssetDataForDeletion) > 0;
 }
 
-
 /**
  * Opens an asset in the editor.
  *
@@ -281,10 +278,10 @@ bool FFolderCleanerModule::DeleteSingleAssetForAssetList(const FAssetData& Asset
  */
 bool FFolderCleanerModule::OpenAsset(const FAssetData AssetDataToOpen)
 {
-	if (!AssetDataToOpen.IsValid())  return false;
+	if (! AssetDataToOpen.IsValid()) return false;
 
 	const UObject* LoadedAsset = UEditorAssetLibrary::LoadAsset(AssetDataToOpen.ToSoftObjectPath().ToString());
-	if (!LoadedAsset) return false;
+	if (! LoadedAsset) return false;
 
 	return AssetViewUtils::OpenEditorForAsset(AssetDataToOpen.ToSoftObjectPath().ToString());
 }
@@ -318,15 +315,15 @@ void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
 
 	for (const FString& FolderPath : FolderPathsArray)
 	{
-		if (FolderPath.Contains(TEXT("Developers")) ||          //
-			FolderPath.Contains(TEXT("Collections")) ||         //
-			FolderPath.Contains(TEXT("__ExternalActors__")) ||  //
-			FolderPath.Contains(TEXT("__ExternalObjects__")))   //
-			continue;                                           //
+		if (FolderPath.Contains(TEXT("Developers")) ||			//
+			FolderPath.Contains(TEXT("Collections")) ||			//
+			FolderPath.Contains(TEXT("__ExternalActors__")) ||	//
+			FolderPath.Contains(TEXT("__ExternalObjects__")))	//
+			continue;											//
 
-		if (!UEditorAssetLibrary::DoesDirectoryExist(FolderPath)) continue;
+		if (! UEditorAssetLibrary::DoesDirectoryExist(FolderPath)) continue;
 
-		if (!UEditorAssetLibrary::DoesDirectoryHaveAssets(FolderPath))
+		if (! UEditorAssetLibrary::DoesDirectoryHaveAssets(FolderPath))
 		{
 			EmptyFolderPathsNames.Append(FolderPath);
 			EmptyFolderPathsNames.Append(TEXT("\n"));
@@ -340,11 +337,11 @@ void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
 		Automation::ShowMessageDialog(EAppMsgType::Ok, TEXT("No empty folder found under selected folder"), false);
 		return;
 	}
-	const EAppReturnType::Type ConfirmResult = Automation::ShowMessageDialog(       //
-		EAppMsgType::OkCancel,                                                //
-		TEXT("Empty folders founds in:\n") +                                  //
-		EmptyFolderPathsNames + TEXT("\nWould you like to delete all?"),  //
-		false);                                                               //
+	const EAppReturnType::Type ConfirmResult = Automation::ShowMessageDialog(	//
+		EAppMsgType::OkCancel,													//
+		TEXT("Empty folders founds in:\n") +									//
+		EmptyFolderPathsNames + TEXT("\nWould you like to delete all?"),		//
+		false);																	//
 
 	if (ConfirmResult == EAppReturnType::Cancel) return;
 
