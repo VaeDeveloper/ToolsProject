@@ -107,7 +107,7 @@ void FFolderCleanerModule::ListUnusedAssetForAssetList(const TArray<TSharedPtr<F
 
 	for (const TSharedPtr<FAssetData>& Data : AssetDataToFilter)
 	{
-		const TArray<FString> AssetRef = UEditorAssetLibrary::FindPackageReferencersForAsset(Data->GetObjectPathString());
+		const TArray<FString> AssetRef = UEditorAssetLibrary::FindPackageReferencersForAsset(Data->PackageName.ToString());
 
 		if (AssetRef.Num() == 0)
 		{
