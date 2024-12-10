@@ -10,14 +10,12 @@ public class BlueprintScanner : ModuleRules
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
-				// ... add public include paths required here ...
 			}
 			);
 				
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				// ... add other private include paths required here ...
 			}
 			);
 			
@@ -26,7 +24,6 @@ public class BlueprintScanner : ModuleRules
 			new string[]
 			{
 				"Core",
-				// ... add other public dependencies that you statically link with here ...
 			}
 			);
 			
@@ -43,7 +40,10 @@ public class BlueprintScanner : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				// ... add private dependencies that you statically link with here ...	
+                "EditorStyle",
+                "ToolWidgets",
+                "DeveloperSettings",
+                "ContentBrowser"
 			}
 			);
 		
