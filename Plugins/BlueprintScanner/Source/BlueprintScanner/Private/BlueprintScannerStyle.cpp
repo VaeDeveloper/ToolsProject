@@ -43,7 +43,7 @@ TSharedRef< FSlateStyleSet > FBlueprintScannerStyle::Create()
 	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("BlueprintScannerStyle"));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin("BlueprintScanner")->GetBaseDir() / TEXT("Resources"));
 
-	Style->Set("BlueprintScanner.PluginAction", new IMAGE_BRUSH_SVG(TEXT("PlaceholderButtonIcon"), Icon20x20));
+	Style->Set("BlueprintScanner.PluginAction", new IMAGE_BRUSH(TEXT("Icon"), Icon20x20));
 	return Style;
 }
 

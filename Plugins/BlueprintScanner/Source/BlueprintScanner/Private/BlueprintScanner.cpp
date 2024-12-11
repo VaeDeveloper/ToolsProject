@@ -190,13 +190,26 @@ void FBlueprintScannerModule::ShutdownModule()
 
 void FBlueprintScannerModule::PluginButtonClicked()
 {
-	// Put your "OnButtonClicked" stuff here
-	FText DialogText = FText::Format(
-							LOCTEXT("PluginButtonDialogText", "Add code to {0} in {1} to override this button's actions"),
-							FText::FromString(TEXT("FBlueprintScannerModule::PluginButtonClicked()")),
-							FText::FromString(TEXT("BlueprintScanner.cpp"))
-					   );
-	FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+	TSharedRef<SVerticalBox> DialogContents = SNew(SVerticalBox);
+
+	DialogContents->AddSlot()
+					.Padding(0, 16, 0, 0)
+					[
+						SNew(STextBlock)
+							.Text(FText::FromString(" The process of scanning all nodes in all blueprints can take a long time. Click OK to continue."))
+					];
+
+	 TSharedPtr<SCustomDialog> CustomDialog = SNew(SCustomDialog)
+													.Title(FText::FromString(" Warning "))
+													.Icon(FAppStyle::Get().GetBrush("NotificationList.DefaultMessage"))
+													.Content()[DialogContents]
+													.Buttons({SCustomDialog::FButton(FText::FromString("OK"))
+														.SetOnClicked(FSimpleDelegate::CreateLambda([this]() 
+															{ 
+																RefreshAllButton_Clicked();
+															}))});
+
+	CustomDialog->ShowModal();
 }
 
 void FBlueprintScannerModule::RegisterLevelEditorButton()
