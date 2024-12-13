@@ -45,5 +45,10 @@ public:
 	bool bShowDebugOnScreen;
 
 	UPROPERTY(config, EditAnywhere, Category = "Debug")
+	bool bConsoleMessageLog;
+
+	UPROPERTY(config, EditAnywhere, Category = "Debug")
 	int32 TimeToDisplayForScreenMessage = 5.0f;
+
+
 };

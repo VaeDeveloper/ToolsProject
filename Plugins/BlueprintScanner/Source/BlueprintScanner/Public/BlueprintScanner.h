@@ -8,7 +8,7 @@
 #include "LevelEditor.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(BlueprintScannerLog, Log, All);
-
+DECLARE_LOG_CATEGORY_EXTERN(BlueprintScannerMessageLog, Log, All);
 
 class FToolBarBuilder;
 class FMenuBuilder;
@@ -84,6 +84,9 @@ public:
 	void AddPathViewContextMenuEntry(FMenuBuilder& Builder);
 	
 private:
+
+	const UBlueprintScannerSettings* GetCustomPluginSettings() const;
+
 
 	void RegisterMenus();
 

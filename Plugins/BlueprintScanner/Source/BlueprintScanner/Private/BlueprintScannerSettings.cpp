@@ -14,6 +14,7 @@ UBlueprintScannerSettings::UBlueprintScannerSettings()
 	bRefreshGameBlueprints = true;
 	bCompileBlueprints = true;
 	bShowDebugOnScreen = true;
+	bConsoleMessageLog = true;
 }
 
 #if WITH_EDITOR
