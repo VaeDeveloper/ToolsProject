@@ -462,20 +462,14 @@ void SFolderCleaning::OnComboSelectionChange(TSharedPtr<FString> SelecetedOption
 
 void SFolderCleaning::OnAssetSelectionChange(TSharedPtr<FString> SelectedOption, ESelectInfo::Type InSelectInfo)
 {
-	// Обновление текста на основе выбранной опции
 	ComboAssetDisplayTextBlock->SetText(FText::FromString(*SelectedOption.Get()));
-
 	FFolderCleanerModule& Module = FModuleManager::LoadModuleChecked<FFolderCleanerModule>(TEXT("FolderCleaner"));
 
-	// Если выбран тип ассета
 	if (SelectedOption.IsValid())
 	{
 		FString SelectedAssetType = *SelectedOption;
-
-		
 		TArray<TSharedPtr<FAssetData>> FilteredAssetData;
 
-		
 		for (const TSharedPtr<FAssetData>& AssetData : StoredAssetsData)
 		{
 			if (AssetData.IsValid())
