@@ -40,7 +40,6 @@ namespace BlueprintScanner
 	constexpr float ExpireDuration = 15.0f;
 	constexpr float InfoNotificationExpireDuration = 5.0f;
 
-
 	 /**
 	 * Formats text with proper grammar for blueprint counts.
 	 * @param Count - The number of blueprints.
@@ -153,13 +152,8 @@ namespace BlueprintScanner
 }
 
 
-
-
-
 void FBlueprintScannerModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
-	
 	FBlueprintScannerStyle::Initialize();
 	FBlueprintScannerStyle::ReloadTextures();
 
@@ -267,12 +261,6 @@ void FBlueprintScannerModule::FindAndRefreshBlueprints(const FARFilter& Filter, 
 	ResetBlueprintsState();
 	const auto Settings = GetCustomPluginSettings();
 
-	uint64 InnerKey = -1;
-	GEngine->AddOnScreenDebugMessage(InnerKey, 10.0f, FColor::Red, TEXT("Debug"));
-
-	GEditor->AddOnScreenDebugMessage(1, 10.0f, FColor::Red, TEXT("Test Debug"));
-	GEngine->AddOnScreenDebugMessage(1, 10.0f, FColor::Red, TEXT("Test Debug engine"));
-
 	int32 NumAssets;
 	TArray<FAssetData> AssetDatas = FindAssets(Filter, NumAssets);
 
@@ -290,22 +278,6 @@ void FBlueprintScannerModule::FindAndRefreshBlueprints(const FARFilter& Filter, 
 	UpdateProgressNotification(RefreshingNotification, NumAssets);
 	DisplayCompilationNotification();
 	DisplayDebugMessage(Settings);
-
-
-	for (const auto& WarningBlueprint : WarningBlueprints)
-	{
-		const FString Msg = FString::Printf(TEXT("Warning in Blueprint"));
-		if (GEditor)
-		{
-			GEditor->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, *Msg);
-		}
-	}
-
-	for (const auto& ProblemBlueprint : ErrorBlueprints)
-	{
-		const FString Msg = FString::Printf(TEXT("Error in Blueprint : %s"), *ProblemBlueprint->GetFullName());
-		GEditor->AddOnScreenDebugMessage(-1, Settings->TimeToDisplayForScreenMessage, FColor::Red, *Msg);
-	}
 }
 
 void FBlueprintScannerModule::AddLevelEditorMenuEntry(FMenuBuilder& Builder)
@@ -392,9 +364,9 @@ void FBlueprintScannerModule::RegisterMenus()
 	// Owner will be used for cleanup in call to UToolMenus::UnregisterOwner
 	FToolMenuOwnerScoped OwnerScoped(this);
 	
-	UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Window");
+	UToolMenu* MainMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Window");
 	{
-		FToolMenuSection& Section = Menu->FindOrAddSection("WindowLayout");
+		FToolMenuSection& Section = MainMenu->FindOrAddSection("WindowLayout");
 		Section.AddMenuEntryWithCommandList(FBlueprintScannerCommands::Get().PluginAction, PluginCommands);
 	}
 	

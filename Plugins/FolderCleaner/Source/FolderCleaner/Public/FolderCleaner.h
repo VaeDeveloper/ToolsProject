@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+
 /**
  * FFolderCleanerModule handles the operations related to asset management within the selected folders.
  * This class extends the IModuleInterface and provides various functions to filter, manage, and delete assets.
@@ -33,6 +34,16 @@ public:
 	 * @param OutUnusedAssetData The output array containing assets that are unused.
 	 */
 	void ListUnusedAssetForAssetList(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutUnusedAssetData);
+
+
+
+	/**
+	 * // FFolderCleanerModule::FilterAssetsByType(AllAssets, FilteredAssets, DesiredType);
+	 */
+	void FilterAssetsByType(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutFilteredAssetData, const FString& AssetTypeToFilter);
+
+
+
 
 	/**
 	 * @brief Filters assets that share the same name from the provided list of asset data.

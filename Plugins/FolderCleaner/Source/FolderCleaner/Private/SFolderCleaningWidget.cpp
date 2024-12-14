@@ -13,7 +13,7 @@
 namespace
 {
 	static constexpr float TitleInfoFontTextSize = 30.0f;
-	static FName ListAllAssetsName = TEXT("AllAvailable Assets");
+	static FName ListAllAssetsName = TEXT("All Available Assets");
 	static FName ListUnusedAssetsName = TEXT("List of Unused Assets");
 	static FName ListAssetWithSameName = TEXT("List Assets With The Same Name");
 }
@@ -42,6 +42,21 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 	ComboBoxSourceItems.Add(MakeShared<FString>(ListUnusedAssetsName.ToString()));
 	ComboBoxSourceItems.Add(MakeShared<FString>(ListAssetWithSameName.ToString()));
 
+	TSet<FString> UniqueAssetNames; 
+	for (const auto& AssetData : InArgs._AssetDataToStore)
+	{
+		if (AssetData.IsValid())
+		{
+			FString AssetName = AssetData->AssetClassPath.GetAssetName().ToString();
+
+			if (! UniqueAssetNames.Contains(AssetName))
+			{
+				UniqueAssetNames.Add(AssetName);							 
+				ComboBoxAssetListItems.Add(MakeShared<FString>(AssetName));	 
+			}
+		}
+	}
+
 	FSlateFontInfo TitleTextFontInfo = GetEmboseedTextFont();
 	TitleTextFontInfo.Size = TitleInfoFontTextSize;
 
@@ -49,7 +64,8 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 	ChildSlot[SNew(SVerticalBox)
 
 				// Title of the widget
-				+ SVerticalBox::Slot().AutoHeight()
+				+ SVerticalBox::Slot()
+				.AutoHeight()
 				[
 					SNew(STextBlock)
 						.Text(FText::FromString(TEXT("FolderCleaner")))
@@ -60,7 +76,8 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 				]
 
 				// Combo Box for asset selection
-				+ SVerticalBox::Slot().AutoHeight()
+				+ SVerticalBox::Slot()
+				.AutoHeight()
 				[
 					SNew(SHorizontalBox) +
 						SHorizontalBox::Slot()
@@ -69,26 +86,38 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 							ConstructComboBox()
 						]
 
+						+SHorizontalBox::Slot()
+						.FillWidth(0.1f)
+						[
+							ConstructAssetComboBox()
+						]
+
 
 				// Help text for the combo box selection
 				+ SHorizontalBox::Slot()
 						.FillWidth(0.6f)
 						[
-							ConstructComboHelpTexts(TEXT("Specify the listing condition in the drop. Left mouse click to go to where asset"), ETextJustify::Center)
+							ConstructComboHelpTexts(TEXT("Specify the listing condition in the drop."), ETextJustify::Center)
 						]
 
-												  // Current folder display
+				// Current folder display								  
 				+ SHorizontalBox::Slot()
 						.FillWidth(0.1f)
 						[
 							ConstructComboHelpTexts(TEXT("Current Folder: \n") + InArgs._CurrentSelectedFolder, ETextJustify::Right)
 						]
+
+
 				]
 
 				// Scrollable asset list view
 				+ SVerticalBox::Slot().VAlign(VAlign_Fill)
 				[
-					SNew(SScrollBox) + SScrollBox::Slot()[ConstructAssetListView()]
+					SNew(SScrollBox) 
+						+ SScrollBox::Slot()
+						[
+							ConstructAssetListView()
+						]
 				]
 
 				// Control buttons: Delete All, Select All, Deselect All
@@ -108,6 +137,7 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 						[
 							ConstructSelectAllButton()  // Constructs the button to select all assets
 						]
+
 				+ SHorizontalBox::Slot().
 						FillWidth(10.0f)
 						.Padding(5.0f)
@@ -426,6 +456,40 @@ void SFolderCleaning::OnComboSelectionChange(TSharedPtr<FString> SelecetedOption
 	else if (*SelecetedOption.Get() == ListAssetWithSameName)
 	{
 		Module.ListSameNameAssetsForAssetList(StoredAssetsData, DisplayedAssetData);
+		RefreshAssetListView();
+	}
+}
+
+void SFolderCleaning::OnAssetSelectionChange(TSharedPtr<FString> SelectedOption, ESelectInfo::Type InSelectInfo)
+{
+	// Обновление текста на основе выбранной опции
+	ComboAssetDisplayTextBlock->SetText(FText::FromString(*SelectedOption.Get()));
+
+	FFolderCleanerModule& Module = FModuleManager::LoadModuleChecked<FFolderCleanerModule>(TEXT("FolderCleaner"));
+
+	// Если выбран тип ассета
+	if (SelectedOption.IsValid())
+	{
+		FString SelectedAssetType = *SelectedOption;
+
+		
+		TArray<TSharedPtr<FAssetData>> FilteredAssetData;
+
+		
+		for (const TSharedPtr<FAssetData>& AssetData : StoredAssetsData)
+		{
+			if (AssetData.IsValid())
+			{
+				
+				FString AssetClassName = AssetData->AssetClassPath.GetAssetName().ToString();
+				if (AssetClassName == SelectedAssetType)
+				{
+					FilteredAssetData.Add(AssetData); 
+				}
+			}
+		}
+
+		DisplayedAssetData = FilteredAssetData;
 		RefreshAssetListView();
 	}
 }
@@ -800,7 +864,7 @@ FReply SFolderCleaning::OnDeleteAllButtonClicked()
 {
 	if (AssetDataToDeleteArray.Num() == 0)
 	{
-		Automation::ShowMessageDialog(EAppMsgType::Ok, TEXT("No asset currently selected"));
+		FolderCleaner::ShowMessageDialog(EAppMsgType::Ok, TEXT("No asset currently selected"));
 		return FReply::Handled();
 	}
 
@@ -888,7 +952,7 @@ FReply SFolderCleaning::OnDeselectAllButtonClicked()
  */
 FReply SFolderCleaning::OnDeselectAllEmptyFolderButtonClicked()
 {
-	Automation::ShowNotifyInfo(" Delete Empty Folder ");
+	FolderCleaner::ShowNotifyInfo(" Delete Empty Folder ");
 
 	FFolderCleanerModule Module = FModuleManager::LoadModuleChecked<FFolderCleanerModule>(TEXT("FolderCleaner"));
 	Module.OnDeleteEmptyFolderButtonClicked();
@@ -906,7 +970,22 @@ FReply SFolderCleaning::OnDeselectAllEmptyFolderButtonClicked()
  */
 FReply SFolderCleaning::OnRefreshListAssets()
 {
-	Automation::ShowNotifyInfo(" Refresh List View ");
+	FolderCleaner::ShowNotifyInfo(" Refresh List View ");
 	RefreshAssetListView();
 	return FReply::Handled();
+}
+
+TSharedRef<SComboBox<TSharedPtr<FString>>> SFolderCleaning::ConstructAssetComboBox()
+{
+	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructedComboBox =
+	SNew(SComboBox<TSharedPtr<FString>>)
+	.OptionsSource(&ComboBoxAssetListItems)
+	.OnGenerateWidget(this, &SFolderCleaning::OnGenerateComboContent)
+	.OnSelectionChanged(this, &SFolderCleaning::OnAssetSelectionChange)
+	[
+		SAssignNew(ComboAssetDisplayTextBlock, STextBlock)
+			.Text(FText::FromString(TEXT(" Assets Types ")))
+	];
+
+	return ConstructedComboBox;
 }

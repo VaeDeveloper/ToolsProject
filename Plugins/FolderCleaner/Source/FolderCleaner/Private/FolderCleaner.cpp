@@ -10,6 +10,8 @@
 
 #define LOCTEXT_NAMESPACE "FFolderCleanerModule"
 
+// DEFINE_LOG_CATEGORY_STATIC(FolderCleanerLog, All, All);
+
 void FFolderCleanerModule::StartupModule()
 {
 	InitializeMenuExtention();
@@ -48,6 +50,7 @@ TSharedRef<FExtender> FFolderCleanerModule::CustomMenuExtender(const TArray<FStr
 	TSharedRef<FExtender> MenuExtender(new FExtender());
 	if (SelectedPaths.Num() > 0)
 	{
+		
 		MenuExtender->AddMenuExtension(FName("Delete"),																	//
 									   EExtensionHook::After,															//
 									   TSharedPtr<FUICommandList>(),													//
@@ -86,10 +89,12 @@ void FFolderCleanerModule::RegisterAdvancedDeletedTabs()
  */
 void FFolderCleanerModule::AddMenuEntry(FMenuBuilder& MenuBuilder)
 {
+	MenuBuilder.AddSeparator();
 	MenuBuilder.AddMenuEntry(FText::FromString(TEXT("FolderCleaner")),								//
 		FText::FromString(TEXT("List assets by specific condition in a tab for deleting")),			//
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Delete"),								//
 		FExecuteAction::CreateRaw(this, &FFolderCleanerModule::OnAdvancedDeletingButtonClicked));	//
+	MenuBuilder.AddSeparator();
 }
 
 /**
@@ -112,6 +117,21 @@ void FFolderCleanerModule::ListUnusedAssetForAssetList(const TArray<TSharedPtr<F
 		if (AssetRef.Num() == 0)
 		{
 			OutUnusedAssetData.Add(Data);
+		}
+	}
+}
+
+
+void FFolderCleanerModule::FilterAssetsByType(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutFilteredAssetData, const FString& AssetTypeToFilter)
+{
+	OutFilteredAssetData.Empty();
+
+	for (const TSharedPtr<FAssetData>& Data : AssetDataToFilter)
+	{
+		// Check if the asset is of the desired type
+		if (Data->AssetClassPath.GetAssetName().ToString() == AssetTypeToFilter)
+		{
+			OutFilteredAssetData.Add(Data);
 		}
 	}
 }
@@ -207,7 +227,8 @@ TSharedRef<SDockTab> FFolderCleanerModule::OnSpawnFolderCleanerTab(const FSpawnT
 {
 	if (FolderPathsSelected.Num() == 0) return SNew(SDockTab).TabRole(ETabRole::NomadTab);
 
-	return SNew(SDockTab).TabRole(ETabRole::NomadTab)
+	return SNew(SDockTab)
+		.TabRole(ETabRole::NomadTab)
 		[
 			SNew(SFolderCleaning)
 				.AssetDataToStore(GetAllAssetDataUnderSelectedFolder())
@@ -334,10 +355,10 @@ void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
 
 	if (EmptyFoldersPathsArray.Num() == 0)
 	{
-		Automation::ShowMessageDialog(EAppMsgType::Ok, TEXT("No empty folder found under selected folder"), false);
+		FolderCleaner::ShowMessageDialog(EAppMsgType::Ok, TEXT("No empty folder found under selected folder"), false);
 		return;
 	}
-	const EAppReturnType::Type ConfirmResult = Automation::ShowMessageDialog(	//
+	const EAppReturnType::Type ConfirmResult = FolderCleaner::ShowMessageDialog(  //
 		EAppMsgType::OkCancel,													//
 		TEXT("Empty folders founds in:\n") +									//
 		EmptyFolderPathsNames + TEXT("\nWould you like to delete all?"),		//
@@ -353,12 +374,12 @@ void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
 		}
 		else
 		{
-			Automation::PrintGEngineScreen(TEXT("Failed to delete " + EmptyFolderPath), FColor::Red);
+			FolderCleaner::PrintGEngineScreen(TEXT("Failed to delete " + EmptyFolderPath), FColor::Red);
 		}
 	}
 	if (Counter > 0)
 	{
-		Automation::ShowNotifyInfo(TEXT("Successfully deleted ") + FString::FromInt(Counter) + TEXT(" folders"));
+		FolderCleaner::ShowNotifyInfo(TEXT("Successfully deleted ") + FString::FromInt(Counter) + TEXT(" folders"));
 	}
 }
 

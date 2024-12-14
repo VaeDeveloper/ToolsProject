@@ -9,7 +9,7 @@
 
 DEFINE_LOG_CATEGORY_STATIC(FolderCleanerLog, All, All);
 
-namespace Automation
+namespace FolderCleaner
 {
 	/**
 	 * @brief The duration in seconds for which a notification will fade out.
@@ -140,6 +140,9 @@ public:
 	 * based on the selected option. It uses the Automation module to filter assets accordingly.
 	 */
 	void OnComboSelectionChange(TSharedPtr<FString> SelecetedOption, ESelectInfo::Type InSelectInfo);
+
+
+	void OnAssetSelectionChange(TSharedPtr<FString> SelectedOption, ESelectInfo::Type InSelectInfo);
 
 	/**
 	 * Refreshes the asset list view to reflect the current set of displayed assets.
@@ -385,6 +388,15 @@ public:
 	 */
 	FReply OnRefreshListAssets();
 
+
+	/**
+	 *
+	 */
+	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructAssetComboBox();
+
+
+
+
 #pragma region Data
 	// --- data ---
 private:
@@ -413,10 +425,23 @@ private:
 	 */
 	TArray<TSharedPtr<FString>> ComboBoxSourceItems;
 
+
+
+
 	/**
 	 * A text block widget used to display the currently selected combo box option.
 	 */
 	TSharedPtr<STextBlock> ComboDisplayTextBlock;
+
+	/**
+	 *
+	 */
+	TArray<TSharedPtr<FString>> ComboBoxAssetListItems;
+
+	/**
+	 *
+	 */
+	TSharedPtr<STextBlock> ComboAssetDisplayTextBlock;
 
 	/**
 	 * A reference to the constructed list view widget displaying the assets.
