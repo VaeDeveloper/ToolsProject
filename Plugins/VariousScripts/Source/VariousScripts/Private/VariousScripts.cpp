@@ -35,21 +35,23 @@ void FVariousScriptsModule::ShutdownModule()
 	// we call this function before unloading the module.
 
 	UToolMenus::UnRegisterStartupCallback(this);
+
 	UToolMenus::UnregisterOwner(this);
 
 	FVariousScriptsStyle::Shutdown();
+
 	FVariousScriptsCommands::Unregister();
 }
 
 void FVariousScriptsModule::PluginButtonClicked()
 {
-	/// // Put your "OnButtonClicked" stuff here
-	/// FText DialogText = FText::Format(
-	/// 						LOCTEXT("PluginButtonDialogText", "Add code to {0} in {1} to override this button's actions"),
-	/// 						FText::FromString(TEXT("FVariousScriptsModule::PluginButtonClicked()")),
-	/// 						FText::FromString(TEXT("VariousScripts.cpp"))
-	/// 				   );
-	/// FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+	// Put your "OnButtonClicked" stuff here
+	FText DialogText = FText::Format(
+							LOCTEXT("PluginButtonDialogText", "Add code to {0} in {1} to override this button's actions"),
+							FText::FromString(TEXT("FVariousScriptsModule::PluginButtonClicked()")),
+							FText::FromString(TEXT("VariousScripts.cpp"))
+					   );
+	FMessageDialog::Open(EAppMsgType::Ok, DialogText);
 }
 
 void FVariousScriptsModule::RegisterMenus()
