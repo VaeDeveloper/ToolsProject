@@ -33,7 +33,6 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 
 	GetTypeOfAssets(InArgs._AssetDataToStore);
 
-
 	FSlateFontInfo TitleTextFontInfo = GetEmboseedTextFont();
 	TitleTextFontInfo.Size = TitleInfoFontTextSize;
 
@@ -144,7 +143,6 @@ void SFolderCleaning::GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetData)
 		}
 	}
 }
-
 
 TSharedRef<SListView<TSharedPtr<FAssetData>>> SFolderCleaning::ConstructAssetListView()
 {

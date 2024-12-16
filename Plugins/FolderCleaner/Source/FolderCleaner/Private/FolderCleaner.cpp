@@ -75,7 +75,7 @@ void FFolderCleanerModule::RegisterAdvancedDeletedTabs()
 	/* clang-format off */
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(FName("FolderCleaner"),			//
 		FOnSpawnTab::CreateRaw(this, &FFolderCleanerModule::OnSpawnFolderCleanerTab))	//
-		.SetDisplayName(FText::FromString(TEXT("FolderCleaner")));						//
+		.SetDisplayName(FText::FromString(TEXT("Folder Cleaner")));						//
 }
 
 
