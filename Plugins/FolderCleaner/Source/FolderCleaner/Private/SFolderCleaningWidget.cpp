@@ -45,7 +45,7 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				[
 					SNew(STextBlock)
-						.Text(FText::FromString(TEXT("FolderCleaner")))
+						.Text(FText::FromString(TEXT("Folder Cleaner")))
 						.Font(TitleTextFontInfo)
 						.Justification(ETextJustify::Center)
 						.ColorAndOpacity(FColor::White)
