@@ -18,17 +18,6 @@ namespace
 	static FName ListAssetWithSameName = TEXT("List Assets With The Same Name");
 }
 
-/**
- * @brief Constructs the SFolderCleaning widget.
- *
- * This function initializes the SFolderCleaning widget with the provided arguments. It sets up
- * various member variables, constructs the UI components, and lays out the structure of the
- * folder cleaning interface, including a title, a combo box for asset selection, a scrollable
- * asset list view, and control buttons for deleting, selecting, and deselecting assets.
- *
- * @param InArgs The arguments used to initialize the widget, including the asset data to store
- *               and the currently selected folder.
- */
 void SFolderCleaning::Construct(const FArguments& InArgs)
 {
 	bCanSupportFocus = true;
@@ -42,24 +31,13 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 	ComboBoxSourceItems.Add(MakeShared<FString>(ListUnusedAssetsName.ToString()));
 	ComboBoxSourceItems.Add(MakeShared<FString>(ListAssetWithSameName.ToString()));
 
-	TSet<FString> UniqueAssetNames; 
-	for (const auto& AssetData : InArgs._AssetDataToStore)
-	{
-		if (AssetData.IsValid())
-		{
-			FString AssetName = AssetData->AssetClassPath.GetAssetName().ToString();
+	GetTypeOfAssets(InArgs._AssetDataToStore);
 
-			if (! UniqueAssetNames.Contains(AssetName))
-			{
-				UniqueAssetNames.Add(AssetName);							 
-				ComboBoxAssetListItems.Add(MakeShared<FString>(AssetName));	 
-			}
-		}
-	}
 
 	FSlateFontInfo TitleTextFontInfo = GetEmboseedTextFont();
 	TitleTextFontInfo.Size = TitleInfoFontTextSize;
 
+#pragma region SlateRegion
 	/* clang-format off */
 	ChildSlot[SNew(SVerticalBox)
 
@@ -146,17 +124,28 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 						]
 				]
 	];
+#pragma endregion SlateRegion
 }
 
-/**
- * @brief Constructs the asset list view for displaying assets.
- *
- * This function creates and returns a list view widget that displays asset data. The list view
- * is configured with item height, a source of displayed asset data, and a callback for generating
- * each row in the list. It also sets a tooltip for the list view.
- *
- * @return A shared reference to the SListView widget that displays the asset data.
- */
+void SFolderCleaning::GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetData)
+{
+	TSet<FString> UniqueAssetNames; 
+	for (const auto& AssetData : AssetData)
+	{
+		if (AssetData.IsValid())
+		{
+			FString AssetName = AssetData->AssetClassPath.GetAssetName().ToString();
+	
+			if (! UniqueAssetNames.Contains(AssetName))
+			{
+				UniqueAssetNames.Add(AssetName);							 
+				ComboBoxAssetListItems.Add(MakeShared<FString>(AssetName));	 
+			}
+		}
+	}
+}
+
+
 TSharedRef<SListView<TSharedPtr<FAssetData>>> SFolderCleaning::ConstructAssetListView()
 {
 	/* clang-format off */
@@ -173,17 +162,6 @@ TSharedRef<SListView<TSharedPtr<FAssetData>>> SFolderCleaning::ConstructAssetLis
 }
 
 
-/**
- * @brief Generates a row for the asset list view.
- *
- * This function creates and returns a table row widget for the specified asset data. It configures
- * the layout of the row to display the asset class name, asset name, and buttons for various actions,
- * such as opening the asset, viewing references, generating a size map, and deleting the asset.
- *
- * @param AssetDataToDisplay A shared pointer to the asset data to display in the row.
- * @param OwnerTable A reference to the owner table that contains this row.
- * @return A shared reference to the STableRow widget representing the asset data.
- */
 TSharedRef<ITableRow> SFolderCleaning::OnGenerateRowForList(TSharedPtr<FAssetData> AssetDataToDisplay, const TSharedRef<STableViewBase>& OwnerTable)
 {
 	if (!AssetDataToDisplay.IsValid()) return SNew(STableRow<TSharedPtr<FAssetData>>, OwnerTable);
@@ -284,17 +262,6 @@ TSharedRef<ITableRow> SFolderCleaning::OnGenerateRowForList(TSharedPtr<FAssetDat
 	return ListViewRowWidget;
 }
 
-
-/**
- * @brief Constructs a checkbox for the specified asset data.
- *
- * This function creates a checkbox widget that allows the user to select or deselect the asset
- * associated with the provided asset data. It sets up a callback for state changes and adds the
- * checkbox to an internal array for tracking.
- *
- * @param AssetDataToDisplay A shared pointer to the asset data associated with the checkbox.
- * @return A shared reference to the constructed SCheckBox widget.
- */
 TSharedRef<SCheckBox> SFolderCleaning::ConstructCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay)
 {
 	TSharedRef<SCheckBox> ConstructedCheckBox =
@@ -308,16 +275,6 @@ TSharedRef<SCheckBox> SFolderCleaning::ConstructCheckBox(const TSharedPtr<FAsset
 	return ConstructedCheckBox;
 }
 
-/**
- * Constructs a text block widget for displaying text within a row of the list view.
- *
- * @param TextContent The string content to be displayed in the text block.
- * @param FontToUse The font to be used for the text.
- * @return A shared reference to the constructed STextBlock widget.
- *
- * This method creates a text block with the specified content and font.
- * The text block is used to display asset information such as the asset name or class name in the list view.
- */
 TSharedRef<STextBlock> SFolderCleaning::ConstructTextForRowWidget(const FString& TextContent, const FSlateFontInfo& FontToUse)
 {
 	TSharedRef<STextBlock> ConstructedTextBlock =
@@ -329,16 +286,6 @@ TSharedRef<STextBlock> SFolderCleaning::ConstructTextForRowWidget(const FString&
 	return ConstructedTextBlock;
 }
 
-/**
- * Handles the state change event for checkboxes in the asset list.
- *
- * @param NewState The new state of the checkbox (Unchecked, Checked, or Undetermined).
- * @param AssetData A shared pointer to the asset data associated with the checkbox.
- *
- * This method updates the array of assets marked for deletion based on the checkbox's new state.
- * If the checkbox is unchecked, the associated asset is removed from the deletion list.
- * If the checkbox is checked, the asset is added to the deletion list, ensuring no duplicates.
- */
 void SFolderCleaning::OnCheckBoxStateChanged(ECheckBoxState NewState, TSharedPtr<FAssetData> AssetData)
 {
 	switch (NewState)
@@ -362,13 +309,6 @@ void SFolderCleaning::OnCheckBoxStateChanged(ECheckBoxState NewState, TSharedPtr
 	}
 }
 
-/**
- * Constructs a combo box widget for the advanced deletion tab.
- * The combo box uses a predefined list of options and provides functionality for generating its content
- * and handling selection changes.
- *
- * @return A shared reference to the constructed SComboBox widget.
- */
 TSharedRef<SComboBox<TSharedPtr<FString>>> SFolderCleaning::ConstructComboBox()
 {
 	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructedComboBox =
@@ -384,13 +324,22 @@ TSharedRef<SComboBox<TSharedPtr<FString>>> SFolderCleaning::ConstructComboBox()
 	return ConstructedComboBox;
 }
 
-/**
- * Constructs a text block widget for tab buttons, with customized font and center justification.
- * The font size is set to 15.
- *
- * @param TextContent The text content to display within the text block.
- * @return A shared reference to the constructed STextBlock widget.
- */
+
+TSharedRef<SComboBox<TSharedPtr<FString>>> SFolderCleaning::ConstructAssetComboBox()
+{
+	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructedComboBox =
+	SNew(SComboBox<TSharedPtr<FString>>)
+	.OptionsSource(&ComboBoxAssetListItems)
+	.OnGenerateWidget(this, &SFolderCleaning::OnGenerateComboContent)
+	.OnSelectionChanged(this, &SFolderCleaning::OnAssetSelectionChange)
+	[
+		SAssignNew(ComboAssetDisplayTextBlock, STextBlock)
+			.Text(FText::FromString(TEXT(" Assets Types ")))
+	];
+
+	return ConstructedComboBox;
+}
+
 TSharedRef<STextBlock> SFolderCleaning::ConstructTextForTabButtons(const FString& TextContent)
 {
 	FSlateFontInfo ButtonTextFont = GetEmboseedTextFont();
@@ -405,16 +354,6 @@ TSharedRef<STextBlock> SFolderCleaning::ConstructTextForTabButtons(const FString
 	return ConstructedTextBlock;
 }
 
-/**
- * @brief Constructs a help text block with the specified text and justification.
- *
- * This function creates a text block widget that displays help or informational text. It allows
- * for automatic text wrapping and sets the justification based on the provided parameters.
- *
- * @param Text The text to be displayed in the help text block.
- * @param TextType The justification of the text (e.g., left, center, right).
- * @return A shared reference to the constructed STextBlock widget.
- */
 TSharedRef<STextBlock> SFolderCleaning::ConstructComboHelpTexts(const FString& Text, ETextJustify::Type TextType)
 {
 	TSharedRef<STextBlock> ConstructHelpText =
@@ -427,16 +366,6 @@ TSharedRef<STextBlock> SFolderCleaning::ConstructComboHelpTexts(const FString& T
 }
 
 
-/**
- * Handles the selection change event for the combo box in the deletion tab.
- *
- * @param SelectedOption A shared pointer to the string representing the newly selected option.
- * @param InSelectInfo The type of selection (e.g., directly selected by the user or programmatically changed).
- *
- * This method updates the display text of the combo box and refreshes the asset list view based on the selected option.
- * It categorizes assets into three groups: all assets, unused assets, and assets with the same name.
- * The asset list view is refreshed to display the selected category of assets.
- */
 void SFolderCleaning::OnComboSelectionChange(TSharedPtr<FString> SelecetedOption, ESelectInfo::Type InSelectInfo)
 {
 	ComboDisplayTextBlock->SetText(FText::FromString(*SelecetedOption.Get()));
@@ -463,11 +392,10 @@ void SFolderCleaning::OnComboSelectionChange(TSharedPtr<FString> SelecetedOption
 void SFolderCleaning::OnAssetSelectionChange(TSharedPtr<FString> SelectedOption, ESelectInfo::Type InSelectInfo)
 {
 	ComboAssetDisplayTextBlock->SetText(FText::FromString(*SelectedOption.Get()));
-	FFolderCleanerModule& Module = FModuleManager::LoadModuleChecked<FFolderCleanerModule>(TEXT("FolderCleaner"));
 
 	if (SelectedOption.IsValid())
 	{
-		FString SelectedAssetType = *SelectedOption;
+		const FString SelectedAssetType = *SelectedOption;
 		TArray<TSharedPtr<FAssetData>> FilteredAssetData;
 
 		for (const TSharedPtr<FAssetData>& AssetData : StoredAssetsData)
@@ -475,7 +403,7 @@ void SFolderCleaning::OnAssetSelectionChange(TSharedPtr<FString> SelectedOption,
 			if (AssetData.IsValid())
 			{
 				
-				FString AssetClassName = AssetData->AssetClassPath.GetAssetName().ToString();
+				const FString AssetClassName = AssetData->AssetClassPath.GetAssetName().ToString();
 				if (AssetClassName == SelectedAssetType)
 				{
 					FilteredAssetData.Add(AssetData); 
@@ -488,12 +416,6 @@ void SFolderCleaning::OnAssetSelectionChange(TSharedPtr<FString> SelectedOption,
 	}
 }
 
-/**
- * Refreshes the asset list view by clearing the current data and rebuilding the list.
- *
- * This method clears the arrays that store the data for assets marked for deletion and the checkboxes.
- * It then checks if the asset list view is valid and triggers a rebuild of the list view to reflect any changes.
- */
 void SFolderCleaning::RefreshAssetListView()
 {
 	AssetDataToDeleteArray.Empty();
@@ -505,15 +427,6 @@ void SFolderCleaning::RefreshAssetListView()
 	}
 }
 
-/**
- * Constructs a button widget for deleting an asset from the list view.
- *
- * @param AssetDataToDisplay A shared pointer to the asset data associated with this button.
- * @return A shared reference to the constructed SButton widget.
- *
- * This method creates a delete button and binds its click event to the appropriate handler.
- * The button is used within each row of the list view to allow users to delete specific assets.
- */
 TSharedRef<SButton> SFolderCleaning::ConstructDeleteButtonForRowWidget(const TSharedPtr<FAssetData>& AssetDataToDisplay)
 {
 	TSharedRef<SButton> ConstructedButton =
@@ -524,15 +437,6 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeleteButtonForRowWidget(const TSh
 	return ConstructedButton;
 }
 
-/**
- * @brief Creates a button for displaying the reference view of the specified asset.
- *
- * This function constructs and returns a button labeled "Ref View", which, when clicked,
- * will open the reference viewer for the asset represented by the given AssetDataToDisplay.
- *
- * @param AssetDataToDisplay A shared pointer to the asset data that will be displayed in the reference view.
- * @return A shared reference to the SButton widget for opening the reference view.
- */
 TSharedRef<SButton> SFolderCleaning::ConstructReferenceViewButtoWidget(const TSharedPtr<FAssetData>& AssetDataToDisplay)
 {
 	TSharedRef<SButton> ConstructedButton =
@@ -543,15 +447,6 @@ TSharedRef<SButton> SFolderCleaning::ConstructReferenceViewButtoWidget(const TSh
 	return ConstructedButton;
 }
 
-/**
- * @brief Creates a button for displaying the size map of the specified asset.
- *
- * This function constructs and returns a button labeled "SizeMap", which, when clicked,
- * will open the size map view for the asset represented by the given AssetDataToDisplay.
- *
- * @param AssetDataToDisplay A shared pointer to the asset data that will be displayed in the size map view.
- * @return A shared reference to the SButton widget for opening the size map view.
- */
 TSharedRef<SButton> SFolderCleaning::ConstructSizeMapButtoWidget(const TSharedPtr<FAssetData>& AssetDataToDisplay)
 {
 	TSharedRef<SButton> ConstructedButton =
@@ -562,13 +457,6 @@ TSharedRef<SButton> SFolderCleaning::ConstructSizeMapButtoWidget(const TSharedPt
 	return ConstructedButton;
 }
 
-/**
- * Constructs a button widget labeled "Open" for a row widget in the advanced deletion tab.
- * When clicked, the button triggers the `OnOpenAssetButtonClicked` method, passing the specified asset data.
- *
- * @param AssetDataToDisplay A shared pointer to the asset data to be displayed when the button is clicked.
- * @return A shared reference to the constructed SButton widget.
- */
 TSharedRef<SButton> SFolderCleaning::ConstructOpenAssetButtonForRowWidget(const TSharedPtr<FAssetData>& AssetDataToDisplay)
 {
 	TSharedRef<SButton> ConstructedButton =
@@ -579,14 +467,6 @@ TSharedRef<SButton> SFolderCleaning::ConstructOpenAssetButtonForRowWidget(const 
 	return ConstructedButton;
 }
 
-/**
- * Constructs a "Delete All" button for the advanced deletion tab.
- *
- * @return A shared reference to the constructed SButton widget.
- *
- * This method creates a button that allows users to delete all selected assets.
- * The button's content is set to "Delete All" and its click event is bound to the appropriate handler.
- */
 TSharedRef<SButton> SFolderCleaning::ConstructDeleteAllButton()
 {
 	TSharedRef<SButton> DeleteAllButton =
@@ -599,14 +479,6 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeleteAllButton()
 	return DeleteAllButton;
 }
 
-/**
- * Handles the click event for the "Delete All" button.
- *
- * @return A value of type FReply indicating the handling status of the event.
- *
- * This method removes all assets currently marked for deletion from the list view.
- * The list of assets to delete is cleared and the list view is refreshed.
- */
 TSharedRef<SButton> SFolderCleaning::ConstructSelectAllButton()
 {
 	TSharedRef<SButton> SelectAllButton =
@@ -619,14 +491,6 @@ TSharedRef<SButton> SFolderCleaning::ConstructSelectAllButton()
 	return SelectAllButton;
 }
 
-/**
- * Handles the click event for individual delete buttons in the asset list view.
- *
- * @param AssetDataToDelete A shared pointer to the asset data associated with the delete button.
- * @return A value of type FReply indicating the handling status of the event.
- *
- * This method removes the selected asset from the list of displayed assets and updates the list view.
- */
 TSharedRef<SButton> SFolderCleaning::ConstructDeselectAllButton()
 {
 	TSharedRef<SButton> DeselectAllButton =
@@ -639,13 +503,6 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeselectAllButton()
 	return DeselectAllButton;
 }
 
-/**
- * Constructs a button widget labeled "Clear Empty Folder" for the advanced deletion tab.
- * This button has a content padding of 5.0f, displays a tooltip explaining its purpose,
- * and triggers the `OnDeselectAllEmptyFolderButtonClicked` method when clicked.
- *
- * @return A shared reference to the constructed SButton widget that clears all empty folders and subfolders.
- */
 TSharedRef<SButton> SFolderCleaning::ConstructDeleteAllEmtpyFolderButton()
 {
 	TSharedRef<SButton> DeleteAllEmptyFolderButton =
@@ -660,15 +517,6 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeleteAllEmtpyFolderButton()
 }
 
 
-/**
- * @brief Creates a button to refresh the asset list in the folder cleaning UI.
- *
- * This function constructs and returns a button widget that, when clicked, refreshes the list of assets
- * in the folder cleaning view. The button is styled with a simple look, aligned both horizontally and vertically
- * in the center, and has a tooltip explaining its function.
- *
- * @return A shared reference to the SButton widget that refreshes the asset list.
- */
 TSharedRef<SButton> SFolderCleaning::RefreshListAssets()
 {
 	TSharedRef<SButton> RefreshList =
@@ -685,15 +533,6 @@ TSharedRef<SButton> SFolderCleaning::RefreshListAssets()
 	return RefreshList;
 }
 
-/**
- * Searches for the specified asset in the content browser.
- *
- * @param AssetDataToDisplay A shared pointer to the asset data to be searched.
- * @return A shared reference to the constructed SButton widget.
- *
- * This method creates a "Find in Browser" button that allows users to locate the asset in the content browser.
- * The button's click event is bound to trigger the search in the browser.
- */
 TSharedRef<SButton> SFolderCleaning::SearchAssetInBrowser(TSharedPtr<FAssetData>& AssetData)
 {
 	TSharedRef<SButton> SearchAssetButton =
@@ -718,12 +557,6 @@ TSharedRef<SButton> SFolderCleaning::SearchAssetInBrowser(TSharedPtr<FAssetData>
 }
 
 
-/**
- * Generates the content for each item in the combo box by creating a text block for the given source item.
- *
- * @param SourceItem A shared pointer to the string representing the content of a combo box item.
- * @return A shared reference to the constructed SWidget containing the text block for the combo box item.
- */
 TSharedRef<SWidget> SFolderCleaning::OnGenerateComboContent(TSharedPtr<FString> SourceItem)
 {
 	TSharedRef<STextBlock> ConstructedComboText =
@@ -733,13 +566,6 @@ TSharedRef<SWidget> SFolderCleaning::OnGenerateComboContent(TSharedPtr<FString> 
 	return ConstructedComboText;
 }
 
-/**
- * Handles the click event for the delete button associated with an asset.
- * Deletes the selected asset from the list if the deletion is successful and refreshes the asset list view.
- *
- * @param ClickedAssetData A shared pointer to the asset data that was clicked.
- * @return An FReply object indicating that the event was handled.
- */
 FReply SFolderCleaning::OnDeleteButtonClicked(TSharedPtr<FAssetData> ClickedAssetData)
 {
 	if (!ClickedAssetData.IsValid())
@@ -772,16 +598,6 @@ FReply SFolderCleaning::OnDeleteButtonClicked(TSharedPtr<FAssetData> ClickedAsse
 	return FReply::Handled();
 }
 
-/**
- * @brief Handles the click event for the reference view button.
- *
- * This function is triggered when the "Ref View" button is clicked. It checks if the asset data
- * is valid, and if so, it loads the FolderCleaner module and triggers the reference viewer
- * for the specified asset.
- *
- * @param ClickedAssetData A shared pointer to the asset data that was clicked.
- * @return An FReply indicating that the event was handled.
- */
 FReply SFolderCleaning::OnRefViewButtonClicked(TSharedPtr<FAssetData> ClickedAssetData)
 {
 	if (!ClickedAssetData.IsValid())
@@ -800,16 +616,6 @@ FReply SFolderCleaning::OnRefViewButtonClicked(TSharedPtr<FAssetData> ClickedAss
 	return FReply::Handled();
 }
 
-/**
- * @brief Handles the click event for the size map button.
- *
- * This function is triggered when the "SizeMap" button is clicked. It checks if the asset data
- * is valid, and if so, it loads the FolderCleaner module and triggers the size map view
- * for the specified asset.
- *
- * @param ClickedAssetData A shared pointer to the asset data that was clicked.
- * @return An FReply indicating that the event was handled.
- */
 FReply SFolderCleaning::OnSizeMapButtonClicked(TSharedPtr<FAssetData> ClickedAssetData)
 {
 	if (!ClickedAssetData.IsValid())
@@ -828,13 +634,6 @@ FReply SFolderCleaning::OnSizeMapButtonClicked(TSharedPtr<FAssetData> ClickedAss
 	return FReply::Handled();
 }
 
-/**
- * Handles the click event for the "Open" asset button in the advanced deletion tab.
- * This method displays a notification indicating that the asset has been opened.
- *
- * @param ClickedAssetData A shared pointer to the asset data that was clicked.
- * @return An FReply object signaling that the event was successfully handled.
- */
 FReply SFolderCleaning::OnOpenAssetButtonClicked(TSharedPtr<FAssetData> ClickedAssetData)
 {
 	FFolderCleanerModule& Module = FModuleManager::LoadModuleChecked<FFolderCleanerModule>(TEXT("FolderCleaner"));
@@ -844,16 +643,6 @@ FReply SFolderCleaning::OnOpenAssetButtonClicked(TSharedPtr<FAssetData> ClickedA
 	return FReply::Handled();
 }
 
-/**
- * Handles the event when the "Delete All" button is clicked.
- *
- * This method checks if there are any assets selected for deletion. If no assets are selected,
- * it shows a message dialog informing the user. If assets are selected, it proceeds to delete
- * them by using the Automation module. After successful deletion, it updates the stored and
- * displayed asset lists and refreshes the asset list view.
- *
- * @return FReply::Handled() to indicate the event was handled.
- */
 FReply SFolderCleaning::OnDeleteAllButtonClicked()
 {
 	if (AssetDataToDeleteArray.Num() == 0)
@@ -893,13 +682,6 @@ FReply SFolderCleaning::OnDeleteAllButtonClicked()
 	return FReply::Handled();
 }
 
-/**
- * Handles the event when the "Select All" button is clicked.
- *
- * This method iterates through all checkboxes and selects them if they are not already selected.
- *
- * @return FReply::Handled() to indicate the event was handled.
- */
 FReply SFolderCleaning::OnSelectAllButtonClicked()
 {
 	if (CheckBoxArray.Num() == 0) return FReply::Handled();
@@ -915,13 +697,6 @@ FReply SFolderCleaning::OnSelectAllButtonClicked()
 	return FReply::Handled();
 }
 
-/**
- * Handles the event when the "Deselect All" button is clicked.
- *
- * This method iterates through all checkboxes and deselects them if they are currently selected.
- *
- * @return FReply::Handled() to indicate the event was handled.
- */
 FReply SFolderCleaning::OnDeselectAllButtonClicked()
 {
 	if (CheckBoxArray.Num() == 0) return FReply::Handled();
@@ -937,13 +712,6 @@ FReply SFolderCleaning::OnDeselectAllButtonClicked()
 	return FReply::Handled();
 }
 
-/**
- * Handles the event when the "Deselect All Empty Folders" button is clicked.
- *
- * This method simply shows a notification indicating that empty folders have been deleted.
- *
- * @return FReply::Handled() to indicate the event was handled.
- */
 FReply SFolderCleaning::OnDeselectAllEmptyFolderButtonClicked()
 {
 	FolderCleaner::ShowNotifyInfo(" Delete Empty Folder ");
@@ -954,14 +722,6 @@ FReply SFolderCleaning::OnDeselectAllEmptyFolderButtonClicked()
 	return FReply::Handled();
 }
 
-/**
- * @brief Handles the click event for the "Refresh List" button.
- *
- * This function is triggered when the "Refresh List" button is clicked. It displays a notification
- * informing the user that the list is being refreshed, and then updates the asset list view.
- *
- * @return An FReply indicating that the event was handled.
- */
 FReply SFolderCleaning::OnRefreshListAssets()
 {
 	FolderCleaner::ShowNotifyInfo(" Refresh List View ");
@@ -969,17 +729,3 @@ FReply SFolderCleaning::OnRefreshListAssets()
 	return FReply::Handled();
 }
 
-TSharedRef<SComboBox<TSharedPtr<FString>>> SFolderCleaning::ConstructAssetComboBox()
-{
-	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructedComboBox =
-	SNew(SComboBox<TSharedPtr<FString>>)
-	.OptionsSource(&ComboBoxAssetListItems)
-	.OnGenerateWidget(this, &SFolderCleaning::OnGenerateComboContent)
-	.OnSelectionChanged(this, &SFolderCleaning::OnAssetSelectionChange)
-	[
-		SAssignNew(ComboAssetDisplayTextBlock, STextBlock)
-			.Text(FText::FromString(TEXT(" Assets Types ")))
-	];
-
-	return ConstructedComboBox;
-}

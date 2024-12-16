@@ -20,8 +20,6 @@ void FFolderCleanerModule::StartupModule()
 
 void FFolderCleanerModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
 }
 
 /**
@@ -117,21 +115,6 @@ void FFolderCleanerModule::ListUnusedAssetForAssetList(const TArray<TSharedPtr<F
 		if (AssetRef.Num() == 0)
 		{
 			OutUnusedAssetData.Add(Data);
-		}
-	}
-}
-
-
-void FFolderCleanerModule::FilterAssetsByType(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutFilteredAssetData, const FString& AssetTypeToFilter)
-{
-	OutFilteredAssetData.Empty();
-
-	for (const TSharedPtr<FAssetData>& Data : AssetDataToFilter)
-	{
-		// Check if the asset is of the desired type
-		if (Data->AssetClassPath.GetAssetName().ToString() == AssetTypeToFilter)
-		{
-			OutFilteredAssetData.Add(Data);
 		}
 	}
 }

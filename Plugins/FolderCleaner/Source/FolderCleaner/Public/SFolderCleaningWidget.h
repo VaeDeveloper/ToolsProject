@@ -141,7 +141,11 @@ public:
 	 */
 	void OnComboSelectionChange(TSharedPtr<FString> SelecetedOption, ESelectInfo::Type InSelectInfo);
 
-
+	/**
+	 * Handles the selection asset change for the combo box  
+	 * @param SelecetedOption The newly selected option in the combo box.
+	 * @param InSelectInfo Information about how the selection was made (e.g., user interaction, programmatic).
+	 */
 	void OnAssetSelectionChange(TSharedPtr<FString> SelectedOption, ESelectInfo::Type InSelectInfo);
 
 	/**
@@ -299,6 +303,13 @@ public:
 	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructComboBox();
 
 	/**
+	 *	Constructs a combo box for selecting differenct asset type filtering options
+	 *	
+	 *	@return A shared reference to the constructed combo box.
+	 */
+	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructAssetComboBox();
+
+	/**
 	 * Generates the content for each item in the combo box.
 	 *
 	 * @param SourceItem The source item to display in the combo box.
@@ -389,10 +400,7 @@ public:
 	FReply OnRefreshListAssets();
 
 
-	/**
-	 *
-	 */
-	TSharedRef<SComboBox<TSharedPtr<FString>>> ConstructAssetComboBox();
+	void GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetData);
 
 
 

@@ -26,7 +26,6 @@ public:
 	 */
 	virtual void ShutdownModule() override;
 
-
 	/**
 	 * @brief Filters unused assets from the provided list of asset data.
 	 *
@@ -35,16 +34,6 @@ public:
 	 */
 	void ListUnusedAssetForAssetList(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutUnusedAssetData);
 
-
-
-	/**
-	 * // FFolderCleanerModule::FilterAssetsByType(AllAssets, FilteredAssets, DesiredType);
-	 */
-	void FilterAssetsByType(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutFilteredAssetData, const FString& AssetTypeToFilter);
-
-
-
-
 	/**
 	 * @brief Filters assets that share the same name from the provided list of asset data.
 	 *
@@ -52,14 +41,6 @@ public:
 	 * @param OutSameNameAssetData The output array containing assets with duplicate names.
 	 */
 	void ListSameNameAssetsForAssetList(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutSameNameAssetData);
-
-
-	/**
-	 * @brief Retrieves all asset data from the selected folder.
-	 *
-	 * @return An array containing all the asset data under the selected folder.
-	 */
-	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderSelectedFolder();
 
 	/**
 	* @brief Called when the reference viewer button is clicked.
@@ -115,7 +96,6 @@ protected:
 	 */
 	TSharedRef<SDockTab> OnSpawnFolderCleanerTab(const FSpawnTabArgs& TabArgs);
 
-
 private:
 	/**
 	 * @brief Initializes the custom menu extension.
@@ -143,7 +123,12 @@ private:
 	 */
 	void RegisterAdvancedDeletedTabs();
 
-
+	/**
+	 * @brief Retrieves all asset data from the selected folder.
+	 *
+	 * @return An array containing all the asset data under the selected folder.
+	 */
+	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderSelectedFolder();
 
 	/**
 	 * @brief Extends the custom menu with additional options based on the selected paths.
