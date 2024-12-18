@@ -87,6 +87,8 @@ public:
 	 */
 	void OnDeleteEmptyFolderButtonClicked();
 
+	void RefreshFolderCleanerTab();
+
 protected:
 	/**
 	 * @brief Spawns the Folder Cleaner tab in the UI.

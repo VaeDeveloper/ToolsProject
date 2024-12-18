@@ -88,10 +88,12 @@ void FFolderCleanerModule::RegisterAdvancedDeletedTabs()
 void FFolderCleanerModule::AddMenuEntry(FMenuBuilder& MenuBuilder)
 {
 	MenuBuilder.AddSeparator();
+
 	MenuBuilder.AddMenuEntry(FText::FromString(TEXT("FolderCleaner")),								//
 		FText::FromString(TEXT("List assets by specific condition in a tab for deleting")),			//
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Delete"),								//
 		FExecuteAction::CreateRaw(this, &FFolderCleanerModule::OnAdvancedDeletingButtonClicked));	//
+	
 	MenuBuilder.AddSeparator();
 }
 
@@ -195,7 +197,7 @@ void FFolderCleanerModule::ListSameNameAssetsForAssetList(const TArray<TSharedPt
 }
 
 /**
- * @brief Spawns the "Advanced Deletion" tab in the editor UI.
+ * @brief Spawns the "Folder Cleaner Tab" tab in the editor UI.
  *
  * This function creates and returns a new tab of type `SDockTab` with the role
  * `ETabRole::NomadTab`. If no folder is selected (`FolderPathsSelected` is empty),
@@ -363,6 +365,24 @@ void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
 	if (Counter > 0)
 	{
 		FolderCleaner::ShowNotifyInfo(TEXT("Successfully deleted ") + FString::FromInt(Counter) + TEXT(" folders"));
+	}
+}
+
+void FFolderCleanerModule::RefreshFolderCleanerTab() 
+{
+	TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(FName("FolderCleaner"));
+	if (ExistingTab.IsValid())
+	{
+		TSharedPtr<SFolderCleaning> FolderCleaningWidget = StaticCastSharedRef<SFolderCleaning>(ExistingTab->GetContent());
+		if (FolderCleaningWidget.IsValid())
+		{
+			 
+		}
+	}
+	else
+	{
+		
+		FGlobalTabmanager::Get()->TryInvokeTab(FName("FolderCleaner"));
 	}
 }
 

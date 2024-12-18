@@ -38,8 +38,8 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 
 #pragma region SlateRegion
 	/* clang-format off */
-	ChildSlot[SNew(SVerticalBox)
-
+	ChildSlot[
+		SNew(SVerticalBox)
 				// Title of the widget
 				+ SVerticalBox::Slot()
 				.AutoHeight()
@@ -51,20 +51,51 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 						.ColorAndOpacity(FColor::White)
 						.ToolTipText(FText::FromString(TEXT(" Folder Cleaner")))
 				]
+				
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.Padding(FMargin(0, 5)) 
+				[
+					SNew(SSeparator)
+				]
 
+				
 				// Combo Box for asset selection
 				+ SVerticalBox::Slot()
 				.AutoHeight()
 				[
-					SNew(SHorizontalBox) +
-						SHorizontalBox::Slot()
+					SNew(SHorizontalBox)
+						+SHorizontalBox::Slot()
+						.FillWidth(0.1f)
+						.AutoWidth()
+						[
+							SNew(SButton)
+							.Text(FText::FromString(TEXT("Reopen")))
+							.ContentPadding(FMargin(5.0f))
+							.Cursor(EMouseCursor::Hand)
+							.OnClicked(this, &SFolderCleaning::OnReopenButtonClicked)
+						]
+
+						+SHorizontalBox::Slot()
+						.FillWidth(0.1f)
+						.AutoWidth()
+						[
+							SNew(SButton)
+							.Text(FText::FromString(TEXT("Refresh")))
+							.ContentPadding(FMargin(5.0f))
+							.Cursor(EMouseCursor::Hand)
+							.OnClicked(this, &SFolderCleaning::OnRefreshButtonClicked)
+						]
+
+						+ SHorizontalBox::Slot()
 						.AutoWidth()
 						[
 							ConstructComboBox()
 						]
 
-						+SHorizontalBox::Slot()
+						+ SHorizontalBox::Slot()
 						.FillWidth(0.1f)
+						.AutoWidth()
 						[
 							ConstructAssetComboBox()
 						]
@@ -73,8 +104,9 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 				// Help text for the combo box selection
 				+ SHorizontalBox::Slot()
 						.FillWidth(0.6f)
+						.AutoWidth()
 						[
-							ConstructComboHelpTexts(TEXT("Specify the listing condition in the drop."), ETextJustify::Center)
+							ConstructComboHelpTexts(TEXT(" "), ETextJustify::Center)
 						]
 
 				// Current folder display								  
@@ -83,18 +115,31 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 						[
 							ConstructComboHelpTexts(TEXT("Current Folder: \n") + InArgs._CurrentSelectedFolder, ETextJustify::Right)
 						]
+				]
 
-
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.Padding(FMargin(0, 5)) 
+				[
+					SNew(SSeparator)
 				]
 
 				// Scrollable asset list view
-				+ SVerticalBox::Slot().VAlign(VAlign_Fill)
+				+ SVerticalBox::Slot()
+				.VAlign(VAlign_Fill)
 				[
 					SNew(SScrollBox) 
 						+ SScrollBox::Slot()
 						[
 							ConstructAssetListView()
 						]
+				]
+			
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.Padding(FMargin(0, 5)) 
+				[
+					SNew(SSeparator)
 				]
 
 				// Control buttons: Delete All, Select All, Deselect All
@@ -122,6 +167,14 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 							ConstructDeselectAllButton()	// Constructs the button to deselect all assets
 						]
 				]
+
+					
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.Padding(FMargin(0, 5)) 
+				[
+					SNew(SSeparator)
+				]
 	];
 #pragma endregion SlateRegion
 }
@@ -144,6 +197,14 @@ void SFolderCleaning::GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetData)
 	}
 }
 
+void SFolderCleaning::OnAssetListChanged(TSharedPtr<FAssetData> NewSelection, ESelectInfo::Type SelectInfo)
+{
+	if (NewSelection.IsValid())
+    {
+        UE_LOG(LogTemp, Log, TEXT("Selected combo item: "));
+    }
+}
+
 TSharedRef<SListView<TSharedPtr<FAssetData>>> SFolderCleaning::ConstructAssetListView()
 {
 	/* clang-format off */
@@ -154,7 +215,7 @@ TSharedRef<SListView<TSharedPtr<FAssetData>>> SFolderCleaning::ConstructAssetLis
 		.OnGenerateRow(this, &SFolderCleaning::OnGenerateRowForList)
 		.ToolTipText(FText::FromString(TEXT("Tool tip generated row for list ")))
 		.SelectionMode(ESelectionMode::Multi)
-		/*.OnSelectionChanged(this, &SFolderCleaning::OnAssetListChanged)*/;
+		.OnSelectionChanged(this, &SFolderCleaning::OnAssetListChanged);
 
 	return ConstructedAssetListView.ToSharedRef();
 }
@@ -166,7 +227,7 @@ TSharedRef<ITableRow> SFolderCleaning::OnGenerateRowForList(TSharedPtr<FAssetDat
 
 	const FString DisplayAssetClassName = AssetDataToDisplay->AssetClassPath.GetAssetName().ToString();
 	const FString DisplayAssetName = AssetDataToDisplay->AssetName.ToString();
-	const FString DisplayAssetPath = AssetDataToDisplay->AssetClassPath.GetPackageName().ToString();
+	const FString DisplayAssetPath = AssetDataToDisplay->AssetClassPath.GetAssetName().ToString();
 
 	FSlateFontInfo AssetClassNameFont = GetEmboseedTextFont();
 	AssetClassNameFont.Size = 10;
@@ -430,6 +491,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeleteButtonForRowWidget(const TSh
 	TSharedRef<SButton> ConstructedButton =
 		SNew(SButton)
 		.Text(FText::FromString(TEXT("Delete")))
+		.Cursor(EMouseCursor::Hand)
 		.OnClicked(this, &SFolderCleaning::OnDeleteButtonClicked, AssetDataToDisplay);
 
 	return ConstructedButton;
@@ -440,6 +502,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructReferenceViewButtoWidget(const TSh
 	TSharedRef<SButton> ConstructedButton =
 		SNew(SButton)
 		.Text(FText::FromString(TEXT("Ref View")))
+		.Cursor(EMouseCursor::Hand)
 		.OnClicked(this, &SFolderCleaning::OnRefViewButtonClicked, AssetDataToDisplay);
 
 	return ConstructedButton;
@@ -450,6 +513,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructSizeMapButtoWidget(const TSharedPt
 	TSharedRef<SButton> ConstructedButton =
 		SNew(SButton)
 		.Text(FText::FromString(TEXT("SizeMap")))
+		.Cursor(EMouseCursor::Hand)
 		.OnClicked(this, &SFolderCleaning::OnSizeMapButtonClicked, AssetDataToDisplay);
 
 	return ConstructedButton;
@@ -460,6 +524,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructOpenAssetButtonForRowWidget(const 
 	TSharedRef<SButton> ConstructedButton =
 		SNew(SButton)
 		.Text(FText::FromString(TEXT("Open")))
+		.Cursor(EMouseCursor::Hand)
 		.OnClicked(this, &SFolderCleaning::OnOpenAssetButtonClicked, AssetDataToDisplay);
 
 	return ConstructedButton;
@@ -470,6 +535,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeleteAllButton()
 	TSharedRef<SButton> DeleteAllButton =
 		SNew(SButton)
 		.ContentPadding(FMargin(5.0f))
+		.Cursor(EMouseCursor::Hand)
 		.OnClicked(this, &SFolderCleaning::OnDeleteAllButtonClicked);
 
 	DeleteAllButton->SetContent(ConstructTextForTabButtons(TEXT("Delete Selected")));
@@ -482,6 +548,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructSelectAllButton()
 	TSharedRef<SButton> SelectAllButton =
 		SNew(SButton)
 		.ContentPadding(FMargin(5.0f))
+		.Cursor(EMouseCursor::Hand)
 		.OnClicked(this, &SFolderCleaning::OnSelectAllButtonClicked);
 
 	SelectAllButton->SetContent(ConstructTextForTabButtons(TEXT("Select All")));
@@ -494,6 +561,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeselectAllButton()
 	TSharedRef<SButton> DeselectAllButton =
 		SNew(SButton)
 		.ContentPadding(FMargin(5.0f))
+		.Cursor(EMouseCursor::Hand)
 		.OnClicked(this, &SFolderCleaning::OnDeselectAllButtonClicked);
 
 	DeselectAllButton->SetContent(ConstructTextForTabButtons(TEXT("Deselect All")));
@@ -724,6 +792,21 @@ FReply SFolderCleaning::OnRefreshListAssets()
 {
 	FolderCleaner::ShowNotifyInfo(" Refresh List View ");
 	RefreshAssetListView();
+	return FReply::Handled();
+}
+
+FReply SFolderCleaning::OnRefreshButtonClicked()
+{
+	ComboDisplayTextBlock->SetText(FText::FromString(" List Assets Option "));
+	ComboAssetDisplayTextBlock->SetText(FText::FromString(" Assets Types "));
+	DisplayedAssetData = StoredAssetsData;
+	RefreshAssetListView();
+
+	return FReply::Handled();
+}
+
+FReply SFolderCleaning::OnReopenButtonClicked()
+{
 	return FReply::Handled();
 }
 

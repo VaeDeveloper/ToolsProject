@@ -400,9 +400,14 @@ public:
 	FReply OnRefreshListAssets();
 
 
+	FReply OnRefreshButtonClicked();
+
+	FReply OnReopenButtonClicked();
+
+
 	void GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetData);
 
-
+	void OnAssetListChanged(TSharedPtr<FAssetData> NewSelection, ESelectInfo::Type SelectInfo);
 
 
 #pragma region Data
