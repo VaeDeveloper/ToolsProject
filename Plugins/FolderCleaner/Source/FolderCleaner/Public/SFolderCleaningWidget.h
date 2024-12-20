@@ -11,24 +11,59 @@ DEFINE_LOG_CATEGORY_STATIC(FolderCleanerLog, All, All);
 
 namespace FolderCleaner
 {
+	extern FName FolderCModuleName;
+
 	/**
-	 * @brief The duration in seconds for which a notification will fade out.
+	 * @brief The duration (in seconds) for which a notification will fade out.
+	 * This constant is used to control the fade-out effect for notifications.
 	 */
 	constexpr float NotificationFadeOutDuration = 7.0f;
 
+	/**
+	 * @brief The duration (in seconds) for which on-screen debug messages will fade out.
+	 * This constant is used for controlling the visibility duration of debug messages.
+	 */
+	constexpr float ScreenFadeOutDuration = 9.0f;
+	
+	/**
+	 * @brief Displays a message on the screen using Unreal Engine's debug message system.
+	 *
+	 * @param Message The text message to be displayed on the screen.
+	 * @param Color The color of the debug message to be displayed.
+	 *
+	 * This function requires the `GEngine` pointer to be valid. If `GEngine` is null,
+	 * no message will be displayed.
+	 */
 	static void PrintGEngineScreen(const FString& Message, const FColor& Color)
 	{
 		if (GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 9.0f, Color, Message);
+			GEngine->AddOnScreenDebugMessage(-1, ScreenFadeOutDuration, Color, Message);
 		}
 	}
 
+	/**
+	 * @brief Logs a debug message to the output log.
+	 *
+	 * @param Message The message to be logged in the output log.
+	 *
+	 * The message is logged with the `FolderCleanerLog` category at the "Display" level.
+	 */
 	static void PrintLogDebug(const FString& Message)
 	{
 		UE_LOG(FolderCleanerLog, Display, TEXT("AutomationLog message : %s"), *Message);
 	}
 
+	/**
+	 * @brief Displays a debug message on the screen based on the method and counter values.
+	 *
+	 * @param Method A string representing the context or method name associated with the message.
+	 * @param Counter The number of files or items to be included in the message.
+	 *
+	 * If the `Counter` is greater than 0, the message will display the count of matching files
+	 * in green. Otherwise, a message indicating "No matching files found" will be displayed in red.
+	 * The method name is appended to the message when applicable.
+	 */
 	static void PrintScreenDebug(FString Method, uint32 Counter)
 	{
 		FString MessageStr = FString(".... No matching files found ....");
@@ -117,7 +152,7 @@ public:
 	 *
 	 * @return A FSlateFontInfo object representing the embossed text font style.
 	 */
-	FSlateFontInfo GetEmboseedTextFont() const { return FCoreStyle::Get().GetFontStyle(FName("EmbossedText")); }
+	FORCEINLINE FSlateFontInfo GetEmboseedTextFont() const { return FCoreStyle::Get().GetFontStyle(FName("EmbossedText")); }
 
 	/**
 	 * Handles the state change of a checkbox associated with a specific asset.
@@ -187,7 +222,7 @@ public:
 	 * @param FontToUse The font style to use for the text.
 	 * @return A shared reference to the constructed text block.
 	 */
-	TSharedRef<STextBlock> ConstructTextForRowWidget(const FString& TextContent, const FSlateFontInfo& FontToUse);
+	TSharedRef<STextBlock> ConstructTextForRowWidget(const FString& TextContent, const FSlateFontInfo& FontToUse, const FColor& Color);
 
 	/**
 	 * Constructs a button widget for deleting an asset in the row.
@@ -399,15 +434,26 @@ public:
 	 */
 	FReply OnRefreshListAssets();
 
-
+	/**
+	 * Handles the click event for the "Refresh" button.
+	 *
+	 * @return A reply indicating how the event was handled (e.g., handled, unhandled).
+	 */
 	FReply OnRefreshButtonClicked();
 
+	/**
+	 * Handles the click event for the "Reopen" button.
+	 *
+	 * @return A reply indicating how the event was handled (e.g., handled, unhandled).
+	 */
 	FReply OnReopenButtonClicked();
 
-
+	/**
+	 * Retrieves the types of the specified assets and processes the provided asset data.
+	 *
+	 * @param AssetData An array of shared pointers to FAssetData objects containing the asset information.
+	 */
 	void GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetData);
-
-	void OnAssetListChanged(TSharedPtr<FAssetData> NewSelection, ESelectInfo::Type SelectInfo);
 
 
 #pragma region Data
@@ -416,43 +462,40 @@ private:
 	/**
 	 * An array of checkboxes corresponding to each asset item in the list view.
 	 */
-	TArray<TSharedRef<SCheckBox>> CheckBoxArray;
+	TArray<TSharedRef<SCheckBox>> CheckBoxList;
 
 	/**
 	 * An array containing all the stored asset data.
 	 */
-	TArray<TSharedPtr<FAssetData>> StoredAssetsData;
+	TArray<TSharedPtr<FAssetData>> StoredAssetList;
 
 	/**
 	 * An array containing the asset data currently displayed in the list view.
 	 */
-	TArray<TSharedPtr<FAssetData>> DisplayedAssetData;
+	TArray<TSharedPtr<FAssetData>> VisibleAssetsList;
 
 	/**
 	 * An array containing asset data marked for deletion.
 	 */
-	TArray<TSharedPtr<FAssetData>> AssetDataToDeleteArray;
+	TArray<TSharedPtr<FAssetData>> DeletionAssetList;
 
 	/**
 	 * An array containing the source items for the combo box options.
 	 */
-	TArray<TSharedPtr<FString>> ComboBoxSourceItems;
-
-
-
+	TArray<TSharedPtr<FString>> ComboBoxItemList;
 
 	/**
-	 * A text block widget used to display the currently selected combo box option.
+	 * A text block widget used to display the currently selected option in the combo box.
 	 */
 	TSharedPtr<STextBlock> ComboDisplayTextBlock;
 
 	/**
-	 *
+	 * An array of shared pointers to strings, representing the list of items available in the combo box.
 	 */
 	TArray<TSharedPtr<FString>> ComboBoxAssetListItems;
 
 	/**
-	 *
+	 * A text block widget used to display the currently selected asset in the combo box.
 	 */
 	TSharedPtr<STextBlock> ComboAssetDisplayTextBlock;
 
@@ -460,5 +503,12 @@ private:
 	 * A reference to the constructed list view widget displaying the assets.
 	 */
 	TSharedPtr<SListView<TSharedPtr<FAssetData>>> ConstructedAssetListView;
+
+
+	
+	// notification bool
+	bool ff = true;
 #pragma endregion Data
+
+
 };

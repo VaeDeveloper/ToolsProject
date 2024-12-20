@@ -87,6 +87,8 @@ public:
 	 */
 	void OnDeleteEmptyFolderButtonClicked();
 
+
+	//
 	void RefreshFolderCleanerTab();
 
 protected:
@@ -97,6 +99,18 @@ protected:
 	 * @return A shared reference to the dock tab widget.
 	 */
 	TSharedRef<SDockTab> OnSpawnFolderCleanerTab(const FSpawnTabArgs& TabArgs);
+
+	/**
+	 * @brief Retrieves all asset data located under the project's directory folder.
+	 *
+	 * @return An array of shared pointers to `FAssetData` objects, representing all assets
+	 * found under the project's directory structure.
+	 *
+	 * This method scans the project's directory folder and collects metadata about all assets
+	 * present within it. The returned `TArray` provides access to the asset data for further processing.
+	 */
+	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderProjectDirFolder();
+
 
 private:
 	/**
@@ -118,7 +132,7 @@ private:
 	 *
 	 * Initiates the process of advanced asset deletion.
 	 */
-	void OnAdvancedDeletingButtonClicked();
+	void OnFolderCleanerButtonClicked();
 
 	/**
 	 * @brief Registers tabs for advanced deletion operations.
@@ -155,5 +169,12 @@ private:
 	 * The paths are represented as strings.
 	 */
 	TArray<FString> FolderPathsSelected;
+
+
+	TSharedPtr<FExtensibilityManager> LevelEditorMenuExtensibilityManager;
+	TSharedPtr<FExtender> MenuExtender;
+
+	void MakePulldownMenu(FMenuBarBuilder& menuBuilder); 
+	void FillPulldownMenu(FMenuBuilder& menuBuilder);
 
 };
