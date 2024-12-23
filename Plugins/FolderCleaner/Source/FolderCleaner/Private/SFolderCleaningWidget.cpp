@@ -13,16 +13,24 @@
 
 namespace FolderCleaner
 {
+	struct FAssetLists
+	{
+		static const FName AllAssets;
+		static const FName UnusedAssets;
+		static const FName SameNameAssets;
+	};
+
+	const FName FAssetLists::AllAssets = TEXT("All Available Assets");
+	const FName FAssetLists::UnusedAssets = TEXT("List of Unused Assets");
+	const FName FAssetLists::SameNameAssets = TEXT("List Assets With The Same Name");
+
 	FName FolderCModuleName = TEXT("FolderCleaner");
 
-	static constexpr float TitleInfoFontTextSize = 30.0f;
+	static constexpr float TitleInfoFontTextSize = 15.0f;
 	static const FString TitleTextColor = "2A6FFFFF";
 
-	static const FName ListAllAssetsName = TEXT("All Available Assets");
-	static const FName ListUnusedAssetsName = TEXT("List of Unused Assets");
-	static const FName ListAssetWithSameName = TEXT("List Assets With The Same Name");
 
-	static FFolderCleanerModule& GetFolderModule() 
+	static FFolderCleanerModule& GetFolderModule()
 	{
 		return FModuleManager::LoadModuleChecked<FFolderCleanerModule>(FolderCModuleName);
 	}
@@ -38,9 +46,9 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 	CheckBoxList.Empty();
 	DeletionAssetList.Empty();
 
-	ComboBoxItemList.Add(MakeShared<FString>(FolderCleaner::ListAllAssetsName.ToString()));
-	ComboBoxItemList.Add(MakeShared<FString>(FolderCleaner::ListUnusedAssetsName.ToString()));
-	ComboBoxItemList.Add(MakeShared<FString>(FolderCleaner::ListAssetWithSameName.ToString()));
+	ComboBoxItemList.Add(MakeShared<FString>(FolderCleaner::FAssetLists::AllAssets.ToString()));
+	ComboBoxItemList.Add(MakeShared<FString>(FolderCleaner::FAssetLists::UnusedAssets.ToString()));
+	ComboBoxItemList.Add(MakeShared<FString>(FolderCleaner::FAssetLists::SameNameAssets.ToString()));
 
 	GetTypeOfAssets(InArgs._AssetDataToStore);
 
@@ -51,14 +59,21 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 	/* clang-format off */
 	ChildSlot[
 		SNew(SVerticalBox)
+				+SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(SSeparator)
+				]
+				
 				// Title of the widget
 				+ SVerticalBox::Slot()
 				.AutoHeight()
 				[
 					SNew(STextBlock)
-						.Text(FText::FromString(TEXT("Folder Cleaner")))
+						.AutoWrapText(true)
+						.Text(FText::FromString(TEXT("Folder Cleaner - Designed to optimize and manage folders and assets in a project")))
 						.Font(TitleTextFontInfo)
-						.Justification(ETextJustify::Center)
+						.Justification(ETextJustify::InvariantLeft)
 						.ColorAndOpacity(FColor::FromHex(FolderCleaner::TitleTextColor))
 				]
 				
@@ -79,20 +94,10 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 						.AutoWidth()
 						[
 							SNew(SButton)
-							.Text(FText::FromString(TEXT("Reopen")))
-							.ContentPadding(FMargin(5.0f))
-							.Cursor(EMouseCursor::Hand)
-							.OnClicked(this, &SFolderCleaning::OnReopenButtonClicked)
-						]
-
-						+SHorizontalBox::Slot()
-						.FillWidth(0.1f)
-						.AutoWidth()
-						[
-							SNew(SButton)
 							.Text(FText::FromString(TEXT("Refresh")))
 							.ContentPadding(FMargin(5.0f))
 							.Cursor(EMouseCursor::Hand)
+							.ToolTipText(FText::FromString(TEXT("Performs the function of updating data in the Folder Cleaner interface.")))
 							.OnClicked(this, &SFolderCleaning::OnRefreshButtonClicked)
 						]
 
@@ -109,17 +114,33 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 							ConstructAssetComboBox()
 						]
 
-
-				// Help text for the combo box selection
-				+ SHorizontalBox::Slot()
-						.FillWidth(0.6f)
+						+SHorizontalBox::Slot()
+						.FillWidth(0.1f)
 						.AutoWidth()
 						[
-							ConstructComboHelpTexts(TEXT(" "), ETextJustify::Center)
+							SNew(SButton)
+							.Text(FText::FromString(TEXT("Delete Empty Folders")))
+							.ContentPadding(FMargin(5.0f))
+							.Cursor(EMouseCursor::Hand)
+							.ToolTipText(FText::FromString(TEXT(" ")))
+							.OnClicked(this, &SFolderCleaning::OnDeleteEmptyFolderButtonClicked)
 						]
 
-				// Current folder display								  
-				+ SHorizontalBox::Slot()
+						+SHorizontalBox::Slot()
+						.FillWidth(0.1f)
+						.AutoWidth()
+						[
+							SNew(SButton)
+							.Text(FText::FromString(TEXT("Update Redirectors")))
+							.ContentPadding(FMargin(5.0f))
+							.Cursor(EMouseCursor::Hand)
+							.ToolTipText(FText::FromString(TEXT(" ")))
+							.OnClicked(this, &SFolderCleaning::OnFixupRedirectorsButtonClicked)
+						]
+
+
+						// Current folder display
+						+ SHorizontalBox::Slot()
 						.FillWidth(0.1f)
 						[
 							ConstructComboHelpTexts(TEXT("Current Folder: \n") + InArgs._CurrentSelectedFolder, ETextJustify::Right)
@@ -177,7 +198,6 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 						]
 				]
 
-					
 				+ SVerticalBox::Slot()
 				.AutoHeight()
 				.Padding(FMargin(0, 5)) 
@@ -236,22 +256,25 @@ TSharedRef<ITableRow> SFolderCleaning::OnGenerateRowForList(TSharedPtr<FAssetDat
 
 	FSlateFontInfo AssetNameFont = GetEmboseedTextFont();
 	AssetNameFont.Size = 15;
+	
 
 #pragma region ListRowWidget
 	// Create the row widget for the asset list
 	TSharedRef<STableRow<TSharedPtr<FAssetData>>> ListViewRowWidget =
 		SNew(STableRow<TSharedPtr<FAssetData>>, OwnerTable)
 		.Padding(FMargin(5.0f))
-		.ToolTip( SNew(SToolTip)
+		.ToolTip(
+				SNew(SToolTip)
+				.RenderOpacity(0.5f)
 				[
-                    SNew(SVerticalBox)
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    [
-                        SNew(STextBlock)
-                        .Text(FText::FromString(*AssetFolderPath))
-                        .Font(AssetClassNameFont)
-                        .ColorAndOpacity(FLinearColor::Green)
+					SNew(SVerticalBox)
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						SNew(STextBlock)
+						.Text(FText::FromString(*AssetFolderPath))
+						.Font(AssetClassNameFont)
+						.ColorAndOpacity(FLinearColor::Green)
                     ]
 
 					+ SVerticalBox::Slot()
@@ -272,7 +295,7 @@ TSharedRef<ITableRow> SFolderCleaning::OnGenerateRowForList(TSharedPtr<FAssetDat
 					]
 				])
 
-		[
+				[
 			SNew(SHorizontalBox)
 				// CheckBox for selecting the asset
 				+ SHorizontalBox::Slot()
@@ -462,17 +485,17 @@ void SFolderCleaning::OnComboSelectionChange(TSharedPtr<FString> SelecetedOption
 
 	FFolderCleanerModule& Module = FolderCleaner::GetFolderModule();
 
-	if (*SelecetedOption.Get() == FolderCleaner::ListAllAssetsName)
+	if (*SelecetedOption.Get() == FolderCleaner::FAssetLists::AllAssets)
 	{
 		VisibleAssetsList = StoredAssetList;
 		RefreshAssetListView();
 	}
-	else if (*SelecetedOption.Get() == FolderCleaner::ListUnusedAssetsName)
+	else if (*SelecetedOption.Get() == FolderCleaner::FAssetLists::UnusedAssets)
 	{
 		Module.ListUnusedAssetForAssetList(StoredAssetList, VisibleAssetsList);
 		RefreshAssetListView();
 	}
-	else if (*SelecetedOption.Get() == FolderCleaner::ListAssetWithSameName)
+	else if (*SelecetedOption.Get() == FolderCleaner::FAssetLists::SameNameAssets)
 	{
 		Module.ListSameNameAssetsForAssetList(StoredAssetList, VisibleAssetsList);
 		RefreshAssetListView();
@@ -581,7 +604,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeleteAllButton()
 
 TSharedRef<SButton> SFolderCleaning::ConstructSelectAllButton()
 {
-	TSharedRef<SButton> SelectAllButton =
+	const TSharedRef<SButton> SelectAllButton =
 		SNew(SButton)
 		.ContentPadding(FMargin(5.0f))
 		.Cursor(EMouseCursor::Hand)
@@ -595,7 +618,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructSelectAllButton()
 
 TSharedRef<SButton> SFolderCleaning::ConstructDeselectAllButton()
 {
-	TSharedRef<SButton> DeselectAllButton =
+	const TSharedRef<SButton> DeselectAllButton =
 		SNew(SButton)
 		.ContentPadding(FMargin(5.0f))
 		.Cursor(EMouseCursor::Hand)
@@ -609,7 +632,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeselectAllButton()
 
 TSharedRef<SButton> SFolderCleaning::ConstructDeleteAllEmtpyFolderButton()
 {
-	TSharedRef<SButton> DeleteAllEmptyFolderButton =
+	const TSharedRef<SButton> DeleteAllEmptyFolderButton =
 		SNew(SButton)
 		.ContentPadding(FMargin(5.0f))
 		.ToolTipText(FText::FromString(TEXT(" Clears the given directory of empty folders and subfolders  ")))
@@ -623,7 +646,7 @@ TSharedRef<SButton> SFolderCleaning::ConstructDeleteAllEmtpyFolderButton()
 
 TSharedRef<SButton> SFolderCleaning::RefreshListAssets()
 {
-	TSharedRef<SButton> RefreshList =
+	const TSharedRef<SButton> RefreshList =
 		SNew(SButton)
 		.ButtonStyle(FAppStyle::Get(), "SimpleButton")
 		.ContentPadding(FMargin(5.0f))
@@ -639,7 +662,7 @@ TSharedRef<SButton> SFolderCleaning::RefreshListAssets()
 
 TSharedRef<SButton> SFolderCleaning::SearchAssetInBrowser(TSharedPtr<FAssetData>& AssetData)
 {
-	TSharedRef<SButton> SearchAssetButton =
+	const TSharedRef<SButton> SearchAssetButton =
 		SNew(SButton)
 		.ButtonStyle(FAppStyle::Get(), "SimpleButton")
 		.HAlign(HAlign_Center)
@@ -663,7 +686,7 @@ TSharedRef<SButton> SFolderCleaning::SearchAssetInBrowser(TSharedPtr<FAssetData>
 
 TSharedRef<SWidget> SFolderCleaning::OnGenerateComboContent(TSharedPtr<FString> SourceItem)
 {
-	TSharedRef<STextBlock> ConstructedComboText =
+	const TSharedRef<STextBlock> ConstructedComboText =
 		SNew(STextBlock)
 		.Text(FText::FromString(*SourceItem.Get()));
 
@@ -835,23 +858,16 @@ FReply SFolderCleaning::OnRefreshButtonClicked()
 	return FReply::Handled();
 }
 
-FReply SFolderCleaning::OnReopenButtonClicked()
+FReply SFolderCleaning::OnDeleteEmptyFolderButtonClicked()
 {
-	if (ff)
-	{
-		FolderCleaner::ShowMessageDialog(EAppMsgType::Ok, TEXT("In progress"));
-		ff = false;
-	}
-	else
-	{
-		FolderCleaner::ShowMessageDialog(EAppMsgType::YesNo, TEXT("Tell me are you stupid? I said it in the process"));
-	}
+	FolderCleaner::GetFolderModule().OnDeleteEmptyFolderButtonClicked();
 
-	//FFolderCleanerModule Module = FModuleManager::LoadModuleChecked<FFolderCleanerModule>(TEXT("FolderCleaner"));
-	//Module.RefreshFolderCleanerTab();
-	// TODO 
-	// нужно чтоб при нажатии полностью обновлялся виджет в зависимости от папки которая выбрана
+	return FReply::Handled();
+}
 
+FReply SFolderCleaning::OnFixupRedirectorsButtonClicked()
+{
+	FolderCleaner::GetFolderModule().FixupRedirectors();
 	return FReply::Handled();
 }
 

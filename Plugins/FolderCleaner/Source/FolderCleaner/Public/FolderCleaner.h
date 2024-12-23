@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-
 /**
  * FFolderCleanerModule handles the operations related to asset management within the selected folders.
  * This class extends the IModuleInterface and provides various functions to filter, manage, and delete assets.
@@ -43,10 +42,10 @@ public:
 	void ListSameNameAssetsForAssetList(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutSameNameAssetData);
 
 	/**
-	* @brief Called when the reference viewer button is clicked.
-	*
-	* @param RefAssetData The list of asset data to be viewed in the reference viewer.
-	*/
+	 * @brief Called when the reference viewer button is clicked.
+	 *
+	 * @param RefAssetData The list of asset data to be viewed in the reference viewer.
+	 */
 	void OnReferenceViewerButtonClicked(TArray<FAssetData> RefAssetData);
 
 	/**
@@ -87,19 +86,16 @@ public:
 	 */
 	void OnDeleteEmptyFolderButtonClicked();
 
-
-	//
-	void RefreshFolderCleanerTab();
-
-protected:
 	/**
-	 * @brief Spawns the Folder Cleaner tab in the UI.
+	 * Fixes up any redirectors in the project.
 	 *
-	 * @param TabArgs The arguments passed for spawning the tab.
-	 * @return A shared reference to the dock tab widget.
+	 * Redirectors are references in the project that point to assets that have been moved or renamed.
+	 * This function scans for such redirectors and attempts to resolve them, ensuring that all references
+	 * point to the correct assets and that there are no broken links in the project.
 	 */
-	TSharedRef<SDockTab> OnSpawnFolderCleanerTab(const FSpawnTabArgs& TabArgs);
+	void FixupRedirectors();
 
+private:
 	/**
 	 * @brief Retrieves all asset data located under the project's directory folder.
 	 *
@@ -111,8 +107,6 @@ protected:
 	 */
 	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderProjectDirFolder();
 
-
-private:
 	/**
 	 * @brief Initializes the custom menu extension.
 	 *
@@ -135,11 +129,6 @@ private:
 	void OnFolderCleanerButtonClicked();
 
 	/**
-	 * @brief Registers tabs for advanced deletion operations.
-	 */
-	void RegisterAdvancedDeletedTabs();
-
-	/**
 	 * @brief Retrieves all asset data from the selected folder.
 	 *
 	 * @return An array containing all the asset data under the selected folder.
@@ -153,7 +142,66 @@ private:
 	 * @return A shared reference to the extender used for the menu.
 	 */
 	TSharedRef<FExtender> CustomMenuExtender(const TArray<FString>& SelectedPaths);
-	
+
+	/**
+	 * Retrieves all asset data under the specified root path.
+	 *
+	 * This function scans the directory structure starting from the given `RootPath`
+	 * and returns an array of `TSharedPtr<FAssetData>`, each representing an asset
+	 * found in the directories. The assets are filtered based on the root directory.
+	 *
+	 * @param RootPath The path to the directory where asset data will be collected from.
+	 *
+	 * @return An array of shared pointers to asset data found under the specified root path.
+	 */
+	TArray<TSharedPtr<FAssetData>> GetAllAssetData(const FString& RootPath);
+
+	/**
+	 * Creates a new folder cleaner tab with the specified asset data and folder path.
+	 *
+	 * This function creates and returns a new dockable tab containing a folder cleaner interface.
+	 * It is initialized with the provided `AssetData` and the folder path (`Path`), allowing
+	 * users to manage and clean folders within the project.
+	 *
+	 * @param AssetData An array of shared pointers to asset data to be displayed in the tab.
+	 * @param Path The folder path that will be displayed in the folder cleaner interface.
+	 *
+	 * @return A reference to a new SDockTab representing the folder cleaner interface.
+	 */
+	TSharedRef<SDockTab> CreateFolderCleanerTab(const TArray<TSharedPtr<FAssetData>>& AssetData, const FString& Path);
+
+	/**
+	 * Creates a menu entry for opening the Folder Cleaner plugin.
+	 *
+	 * This function adds an entry to the menu that, when selected, will open the Folder Cleaner plugin.
+	 * The menu entry is configured with a description and an icon. If the plugin is already open,
+	 * the function will activate the existing tab; otherwise, it will create a new tab for the plugin.
+	 *
+	 * @param SubMenuBuilder The menu builder object that will have the menu entry added to it.
+	 */
+	void CreateFolderCleanerMenu(FMenuBuilder& SubMenuBuilder);
+
+	/**
+	 * Creates a pull-down menu and adds it to the specified menu builder.
+	 *
+	 * This function is responsible for constructing a pull-down menu and populating it with
+	 * custom menu entries. The menu will be built using the provided `menuBuilder` object.
+	 *
+	 * @param menuBuilder The menu bar builder that the pull-down menu will be added to.
+	 */
+	void MakePulldownMenu(FMenuBarBuilder& menuBuilder);
+
+	/**
+	 * Fills the pull-down menu with the required menu entries.
+	 *
+	 * This function populates the pull-down menu with entries that provide the actions and
+	 * options available to the user. It uses the provided `menuBuilder` object to add these
+	 * entries to the menu.
+	 *
+	 * @param menuBuilder The menu builder object that the pull-down menu will be populated in.
+	 */
+	void FillPulldownMenu(FMenuBuilder& menuBuilder);
+
 	/**
 	 * @brief A shared pointer to the command list for the plugin.
 	 *
@@ -170,11 +218,19 @@ private:
 	 */
 	TArray<FString> FolderPathsSelected;
 
-
+	/**
+	 * A shared pointer to an extensibility manager for the Level Editor menu.
+	 *
+	 * This manager allows the modification and extension of the Level Editor's menu, enabling
+	 * custom menu entries, actions, and functionality to be added.
+	 */
 	TSharedPtr<FExtensibilityManager> LevelEditorMenuExtensibilityManager;
+
+	/**
+	 * A shared pointer to a menu extender for the Level Editor menu.
+	 *
+	 * The menu extender is responsible for extending the existing menu system by adding custom
+	 * menu entries or altering the layout of the menu.
+	 */
 	TSharedPtr<FExtender> MenuExtender;
-
-	void MakePulldownMenu(FMenuBarBuilder& menuBuilder); 
-	void FillPulldownMenu(FMenuBuilder& menuBuilder);
-
 };

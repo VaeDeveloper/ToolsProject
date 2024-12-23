@@ -446,7 +446,14 @@ public:
 	 *
 	 * @return A reply indicating how the event was handled (e.g., handled, unhandled).
 	 */
-	FReply OnReopenButtonClicked();
+	FReply OnDeleteEmptyFolderButtonClicked();
+
+	/**
+	 * Handles the click event for the "Reopen" button.
+	 *
+	 * @return A reply indicating how the event was handled (e.g., handled, unhandled).
+	 */
+	FReply OnFixupRedirectorsButtonClicked();
 
 	/**
 	 * Retrieves the types of the specified assets and processes the provided asset data.
@@ -454,7 +461,6 @@ public:
 	 * @param AssetData An array of shared pointers to FAssetData objects containing the asset information.
 	 */
 	void GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetData);
-
 
 #pragma region Data
 	// --- data ---
@@ -504,11 +510,5 @@ private:
 	 */
 	TSharedPtr<SListView<TSharedPtr<FAssetData>>> ConstructedAssetListView;
 
-
-	
-	// notification bool
-	bool ff = true;
 #pragma endregion Data
-
-
 };
