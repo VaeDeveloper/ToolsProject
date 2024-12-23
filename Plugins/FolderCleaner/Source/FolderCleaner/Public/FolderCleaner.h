@@ -5,12 +5,90 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+
+/**
+ * Interface for folder management and asset operations.
+ *
+ * This interface defines the necessary functions for handling assets in a specific folder.
+ * It allows for retrieving assets, deleting them (either singly or in bulk), 
+ * opening them in the editor, and filtering unused or duplicate assets.
+ */
+class IFolderInterface
+{
+public:
+	virtual ~IFolderInterface() = default;
+
+	/**
+	 * Retrieves all asset data under the specified root path.
+	 *
+	 * This function scans the directory structure starting from the given `RootPath`
+	 * and returns an array of `TSharedPtr<FAssetData>`, each representing an asset
+	 * found in the directories. The assets are filtered based on the root directory.
+	 *
+	 * @param RootPath The path to the directory where asset data will be collected from.
+	 *
+	 * @return An array of shared pointers to asset data found under the specified root path.
+	 */
+	virtual TArray<TSharedPtr<FAssetData>> GetAllAssets(const FString&) const = 0;
+
+	/**
+	 * @brief Deletes a single asset from the asset list.
+	 *
+	 * @param AssetDataToDelete The asset data representing the asset to delete.
+	 * @return True if the asset was successfully deleted, false otherwise.
+	 */
+	virtual bool DeleteSingleAsset(const FAssetData&) const = 0;
+
+	/**
+	 * @brief Deletes multiple assets from the provided asset list.
+	 *
+	 * @param AssetArrayToDelete The array of asset data representing the assets to be deleted.
+	 * @return True if the assets were successfully deleted, false otherwise.
+	 */
+	virtual bool DeleteMultiplyAsset(const TArray<FAssetData>&) const = 0;
+
+	/**
+	 * @brief Opens the specified asset in the editor.
+	 *
+	 * @param AssetDataToOpen The asset data of the asset to open.
+	 * @return True if the asset was successfully opened, false otherwise.
+	 */
+	virtual bool OpenAsset(const FAssetData) = 0;
+
+	/**
+	 * @brief Filters unused assets from the provided list of asset data.
+	 *
+	 * @param AssetDataToFilter The list of assets to be filtered.
+	 * @param OutUnusedAssetData The output array containing assets that are unused.
+	 */
+	virtual void FilterUnusedAssets(const TArray<TSharedPtr<FAssetData>>&, TArray<TSharedPtr<FAssetData>>&) = 0;
+
+	/**
+	 * @brief Filters assets that share the same name from the provided list of asset data.
+	 *
+	 * @param AssetDataToFilter The list of assets to be filtered.
+	 * @param OutSameNameAssetData The output array containing assets with duplicate names.
+	 */
+	virtual void FilterDuplicateAssets(const TArray<TSharedPtr<FAssetData>>&, TArray<TSharedPtr<FAssetData>>&) = 0;
+};
+
 /**
  * FFolderCleanerModule handles the operations related to asset management within the selected folders.
  * This class extends the IModuleInterface and provides various functions to filter, manage, and delete assets.
  */
-class FFolderCleanerModule : public IModuleInterface
+class FFolderCleanerModule : public IModuleInterface, public IFolderInterface
 {
+
+#pragma region IFolderInterface
+public:
+	virtual TArray<TSharedPtr<FAssetData>> GetAllAssets(const FString& Path) const;
+	virtual bool DeleteSingleAsset(const FAssetData& Asset) const;
+	virtual bool DeleteMultiplyAsset(const TArray<FAssetData>& Assets) const;
+	virtual bool OpenAsset(const FAssetData Asset);
+	virtual void FilterUnusedAssets(const TArray<TSharedPtr<FAssetData>>& FilterAssetData, TArray<TSharedPtr<FAssetData>>& UnusedAssetData);
+	virtual void FilterDuplicateAssets(const TArray<TSharedPtr<FAssetData>>& FilterAssetData, TArray<TSharedPtr<FAssetData>>& DuplicateAssetData);
+#pragma endregion
+
 public:
 	/**
 	 * @brief Initializes the module when it is started.
@@ -26,22 +104,6 @@ public:
 	virtual void ShutdownModule() override;
 
 	/**
-	 * @brief Filters unused assets from the provided list of asset data.
-	 *
-	 * @param AssetDataToFilter The list of assets to be filtered.
-	 * @param OutUnusedAssetData The output array containing assets that are unused.
-	 */
-	void ListUnusedAssetForAssetList(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutUnusedAssetData);
-
-	/**
-	 * @brief Filters assets that share the same name from the provided list of asset data.
-	 *
-	 * @param AssetDataToFilter The list of assets to be filtered.
-	 * @param OutSameNameAssetData The output array containing assets with duplicate names.
-	 */
-	void ListSameNameAssetsForAssetList(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutSameNameAssetData);
-
-	/**
 	 * @brief Called when the reference viewer button is clicked.
 	 *
 	 * @param RefAssetData The list of asset data to be viewed in the reference viewer.
@@ -54,30 +116,6 @@ public:
 	 * @param RefAssetData The list of asset data to be displayed in the size map.
 	 */
 	void OnSizeMapButtonClicked(TArray<FAssetData> RefAssetData);
-
-	/**
-	 * @brief Opens the specified asset in the editor.
-	 *
-	 * @param AssetDataToOpen The asset data of the asset to open.
-	 * @return True if the asset was successfully opened, false otherwise.
-	 */
-	bool OpenAsset(const FAssetData AssetDataToOpen);
-
-	/**
-	 * @brief Deletes multiple assets from the provided asset list.
-	 *
-	 * @param AssetArrayToDelete The array of asset data representing the assets to be deleted.
-	 * @return True if the assets were successfully deleted, false otherwise.
-	 */
-	bool DeleteMultipleAssetsForAsssetList(const TArray<FAssetData> AssetArrayToDelete);
-
-	/**
-	 * @brief Deletes a single asset from the asset list.
-	 *
-	 * @param AssetDataToDelete The asset data representing the asset to delete.
-	 * @return True if the asset was successfully deleted, false otherwise.
-	 */
-	bool DeleteSingleAssetForAssetList(const FAssetData& AssetDataToDelete);
 
 	/**
 	 * @brief Called when the delete empty folder button is clicked.
@@ -96,16 +134,6 @@ public:
 	void FixupRedirectors();
 
 private:
-	/**
-	 * @brief Retrieves all asset data located under the project's directory folder.
-	 *
-	 * @return An array of shared pointers to `FAssetData` objects, representing all assets
-	 * found under the project's directory structure.
-	 *
-	 * This method scans the project's directory folder and collects metadata about all assets
-	 * present within it. The returned `TArray` provides access to the asset data for further processing.
-	 */
-	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderProjectDirFolder();
 
 	/**
 	 * @brief Initializes the custom menu extension.
@@ -129,32 +157,12 @@ private:
 	void OnFolderCleanerButtonClicked();
 
 	/**
-	 * @brief Retrieves all asset data from the selected folder.
-	 *
-	 * @return An array containing all the asset data under the selected folder.
-	 */
-	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderSelectedFolder();
-
-	/**
 	 * @brief Extends the custom menu with additional options based on the selected paths.
 	 *
 	 * @param SelectedPaths The array of strings representing the selected folder paths.
 	 * @return A shared reference to the extender used for the menu.
 	 */
 	TSharedRef<FExtender> CustomMenuExtender(const TArray<FString>& SelectedPaths);
-
-	/**
-	 * Retrieves all asset data under the specified root path.
-	 *
-	 * This function scans the directory structure starting from the given `RootPath`
-	 * and returns an array of `TSharedPtr<FAssetData>`, each representing an asset
-	 * found in the directories. The assets are filtered based on the root directory.
-	 *
-	 * @param RootPath The path to the directory where asset data will be collected from.
-	 *
-	 * @return An array of shared pointers to asset data found under the specified root path.
-	 */
-	TArray<TSharedPtr<FAssetData>> GetAllAssetData(const FString& RootPath);
 
 	/**
 	 * Creates a new folder cleaner tab with the specified asset data and folder path.
@@ -201,6 +209,15 @@ private:
 	 * @param menuBuilder The menu builder object that the pull-down menu will be populated in.
 	 */
 	void FillPulldownMenu(FMenuBuilder& menuBuilder);
+
+	/**
+	 * Processes asset data by extracting asset identifiers and performing a specified operation.
+	 *
+	 * @param RefAssetData A list of asset data objects to be processed.
+	 * @param ProcessFunction A callback function that operates on the extracted asset identifiers.
+	 *        The function receives an array of asset identifiers (`TArray<FAssetIdentifier>`) as input.
+	 */
+	void ProcessAssetData(const TArray<FAssetData>& RefAssetData, TFunction<void(const TArray<FAssetIdentifier>&)> ProcessFunction);
 
 	/**
 	 * @brief A shared pointer to the command list for the plugin.

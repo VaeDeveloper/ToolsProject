@@ -14,7 +14,6 @@
 
 #define LOCTEXT_NAMESPACE "FFolderCleanerModule"
 
-
 namespace FolderCleaner
 {
 	/**
@@ -26,6 +25,15 @@ namespace FolderCleaner
 	 * and file operations within the project.
 	 */
 	static const FString ProjectDirectory = TEXT("/") + UEditorAssetLibrary::GetProjectRootAssetDirectory();
+
+
+	static bool IsExcludedFolder(const FString& FolderPath) 
+	{
+		return FolderPath.Contains(TEXT("Developers")) 
+			|| FolderPath.Contains(TEXT("Collections")) 
+			|| FolderPath.Contains(TEXT("__ExternalActors__")) 
+			|| FolderPath.Contains(TEXT("__ExternalObjects__"));
+	}
 }
 
 void FFolderCleanerModule::StartupModule()
@@ -39,7 +47,9 @@ void FFolderCleanerModule::StartupModule()
 	LevelEditorMenuExtensibilityManager->AddExtender(MenuExtender);
 }
 
-void FFolderCleanerModule::ShutdownModule() { }
+void FFolderCleanerModule::ShutdownModule() {}
+
+
 
 void FFolderCleanerModule::InitializeMenuExtention()
 {
@@ -72,6 +82,23 @@ void FFolderCleanerModule::MakePulldownMenu(FMenuBarBuilder& menuBuilder)
 								FNewMenuDelegate::CreateRaw(this, &FFolderCleanerModule::FillPulldownMenu), "Custom", FName(TEXT("CustomMenu")));
 }
 
+void FFolderCleanerModule::FillPulldownMenu(FMenuBuilder& menuBuilder)
+{
+	menuBuilder.BeginSection("Folder Section", FText::FromString("Folder Settings Section "));
+
+	menuBuilder.AddSubMenu(
+		FText::FromString("Folders Structure"), 
+		FText::FromString(" Section for Folder Structure "), 
+		FNewMenuDelegate::CreateLambda(
+			[this](FMenuBuilder& SubMenuBuilder) 
+			{ 
+				CreateFolderCleanerMenu(SubMenuBuilder); 
+			}
+		));
+
+	menuBuilder.EndSection();
+}
+
 TSharedRef<SDockTab> FFolderCleanerModule::CreateFolderCleanerTab(const TArray<TSharedPtr<FAssetData>>& AssetData, const FString& Path)
 {
 	return SNew(SDockTab)
@@ -84,48 +111,11 @@ TSharedRef<SDockTab> FFolderCleanerModule::CreateFolderCleanerTab(const TArray<T
 		];
 }
 
-TArray<TSharedPtr<FAssetData>> FFolderCleanerModule::GetAllAssetData(const FString& RootPath)
-{
-	TArray<TSharedPtr<FAssetData>> AvailableAssetsData;
-	const TArray<FString> AssetsPathNames = UEditorAssetLibrary::ListAssets(RootPath);
-
-	for (const FString& AssetPathName : AssetsPathNames)
-	{
-		if (AssetPathName.Contains(TEXT("Developers")) ||		   //
-			AssetPathName.Contains(TEXT("Collections")) ||		   //
-			AssetPathName.Contains(TEXT("__ExternalActors__")) ||  //
-			AssetPathName.Contains(TEXT("__ExternalObjects__")))   //
-			continue;											   //
-
-		if (! UEditorAssetLibrary::DoesAssetExist(AssetPathName)) continue;
-
-		const FAssetData Data = UEditorAssetLibrary::FindAssetData(AssetPathName);
-		AvailableAssetsData.Add(MakeShared<FAssetData>(Data));
-	}
-
-	return AvailableAssetsData;
-}
-
-void FFolderCleanerModule::FillPulldownMenu(FMenuBuilder& menuBuilder) 
-{
-	menuBuilder.BeginSection("Tag Section", FText::FromString("Tag Settings Section "));
-	menuBuilder.AddSubMenu(
-					FText::FromString("Folders Structure"),
-					FText::FromString(" Section for Folder Structure "),
-					FNewMenuDelegate::CreateLambda(
-						[this](FMenuBuilder& SubMenuBuilder)
-						{
-							CreateFolderCleanerMenu(SubMenuBuilder);
-						}));
-		
-	menuBuilder.EndSection();		
-}
-
 void FFolderCleanerModule::CreateFolderCleanerMenu(FMenuBuilder& SubMenuBuilder)
 {
 	SubMenuBuilder.AddMenuEntry(FText::FromString("Open Folder Cleaner"), 
 								FText::FromString("Designed to optimize and manage folders and assets in a project"), 
-								FSlateIcon(),
+								FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Delete"),
 								FUIAction(FExecuteAction::CreateLambda(
 									[this]()
 									{
@@ -138,8 +128,7 @@ void FFolderCleanerModule::CreateFolderCleanerMenu(FMenuBuilder& SubMenuBuilder)
 											return;
 										}
 										
-										TSharedRef<SDockTab> NewTab =
-										CreateFolderCleanerTab(GetAllAssetDataUnderProjectDirFolder(), FolderCleaner::ProjectDirectory);
+										TSharedRef<SDockTab> NewTab = CreateFolderCleanerTab(GetAllAssets(FolderCleaner::ProjectDirectory), FolderCleaner::ProjectDirectory);
 										
 										FGlobalTabmanager::Get()->InsertNewDocumentTab(FolderCleaner::FolderCModuleName, FTabManager::ESearchPreference::PreferLiveTab, NewTab);
 									}
@@ -160,53 +149,78 @@ void FFolderCleanerModule::AddMenuEntry(FMenuBuilder& MenuBuilder)
 
 void FFolderCleanerModule::OnFolderCleanerButtonClicked()
 {
-	TSharedRef<SDockTab> NewTab = CreateFolderCleanerTab(GetAllAssetDataUnderSelectedFolder(), FolderPathsSelected[0]);
+	TSharedRef<SDockTab> NewTab = CreateFolderCleanerTab(GetAllAssets(FolderPathsSelected[0]), FolderPathsSelected[0]);
 
 	FGlobalTabmanager::Get()->InsertNewDocumentTab(FName("FolderCleaner"), FTabManager::ESearchPreference::PreferLiveTab, NewTab);
 }
 
-void FFolderCleanerModule::OnReferenceViewerButtonClicked(TArray<FAssetData> RefAssetData)
+#pragma region IFolderInterface
+TArray<TSharedPtr<FAssetData>> FFolderCleanerModule::GetAllAssets(const FString& Path) const
 {
-	TArray<FAssetIdentifier> AssetIdentifiers;
-	IAssetManagerEditorModule::ExtractAssetIdentifiersFromAssetDataList(RefAssetData, AssetIdentifiers);
-	IAssetManagerEditorModule::Get().OpenReferenceViewerUI(AssetIdentifiers);
-}
+	TArray<TSharedPtr<FAssetData>> AvailableAssetsData;
+	const TArray<FString> AssetsPathNames = UEditorAssetLibrary::ListAssets(Path);
 
-void FFolderCleanerModule::OnSizeMapButtonClicked(TArray<FAssetData> RefAssetData)
-{
-	TArray<FAssetIdentifier> AssetIdentifiers;
-	IAssetManagerEditorModule::ExtractAssetIdentifiersFromAssetDataList(RefAssetData, AssetIdentifiers);
-	IAssetManagerEditorModule::Get().OpenSizeMapUI(AssetIdentifiers);
-}
-
-void FFolderCleanerModule::ListUnusedAssetForAssetList(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutUnusedAssetData)
-{
-	OutUnusedAssetData.Empty();
-
-	for (const TSharedPtr<FAssetData>& Data : AssetDataToFilter)
+	for (const FString& AssetPathName : AssetsPathNames)
 	{
-		const TArray<FString> AssetRef = 
-		UEditorAssetLibrary::FindPackageReferencersForAsset(Data->PackageName.ToString());
+		if (FolderCleaner::IsExcludedFolder(AssetPathName) || ! UEditorAssetLibrary::DoesAssetExist(AssetPathName)) continue;
+
+		const FAssetData Data = UEditorAssetLibrary::FindAssetData(AssetPathName);
+		AvailableAssetsData.Add(MakeShared<FAssetData>(Data));
+	}
+
+	return AvailableAssetsData;
+}
+
+bool FFolderCleanerModule::DeleteSingleAsset(const FAssetData& Asset) const
+{
+	TArray<FAssetData> AssetDataForDeletion;
+	AssetDataForDeletion.Add(Asset);
+
+	return ObjectTools::DeleteAssets(AssetDataForDeletion) > 0;
+}
+
+bool FFolderCleanerModule::DeleteMultiplyAsset(const TArray<FAssetData>& Assets) const
+{
+	return ObjectTools::DeleteAssets(Assets) > 0;
+}
+
+bool FFolderCleanerModule::OpenAsset(const FAssetData Asset)
+{
+	if (! Asset.IsValid()) return false;
+
+	const UObject* LoadedAsset = UEditorAssetLibrary::LoadAsset(Asset.ToSoftObjectPath().ToString());
+	if (! LoadedAsset) return false;
+
+	return AssetViewUtils::OpenEditorForAsset(Asset.ToSoftObjectPath().ToString());
+}
+
+void FFolderCleanerModule::FilterUnusedAssets(const TArray<TSharedPtr<FAssetData>>& FilderAssetData, TArray<TSharedPtr<FAssetData>>& UnusedAssetData)
+{
+	UnusedAssetData.Empty();
+
+	for (const TSharedPtr<FAssetData>& Data : FilderAssetData)
+	{
+		const TArray<FString> AssetRef = UEditorAssetLibrary::FindPackageReferencersForAsset(Data->PackageName.ToString());
 
 		if (AssetRef.IsEmpty())
 		{
-			OutUnusedAssetData.Add(Data);
+			UnusedAssetData.Add(Data);
 		}
 	}
 }
 
-void FFolderCleanerModule::ListSameNameAssetsForAssetList(const TArray<TSharedPtr<FAssetData>>& AssetDataToFilter, TArray<TSharedPtr<FAssetData>>& OutSameNameAssetData)
+void FFolderCleanerModule::FilterDuplicateAssets(const TArray<TSharedPtr<FAssetData>>& FilterAssetData, TArray<TSharedPtr<FAssetData>>& DuplicateAssetData)
 {
-	OutSameNameAssetData.Empty();
+	DuplicateAssetData.Empty();
 
 	TMultiMap<FString, TSharedPtr<FAssetData>> AssetsInfoMultiMap;
 
-	for (const TSharedPtr<FAssetData>& DataSharedPtr : AssetDataToFilter)
+	for (const TSharedPtr<FAssetData>& DataSharedPtr : FilterAssetData)
 	{
 		AssetsInfoMultiMap.Emplace(DataSharedPtr->AssetName.ToString(), DataSharedPtr);
 	}
 
-	for (const TSharedPtr<FAssetData>& DataShare : AssetDataToFilter)
+	for (const TSharedPtr<FAssetData>& DataShare : FilterAssetData)
 	{
 		TArray<TSharedPtr<FAssetData>> OutAssetsData;
 		AssetsInfoMultiMap.MultiFind(DataShare->AssetName.ToString(), OutAssetsData);
@@ -217,43 +231,34 @@ void FFolderCleanerModule::ListSameNameAssetsForAssetList(const TArray<TSharedPt
 		{
 			if (SameNameData.IsValid())
 			{
-				OutSameNameAssetData.AddUnique(SameNameData);
+				DuplicateAssetData.AddUnique(SameNameData);
 			}
 		}
 	}
 }
+#pragma endregion
 
-TArray<TSharedPtr<FAssetData>> FFolderCleanerModule::GetAllAssetDataUnderSelectedFolder()
+void FFolderCleanerModule::OnReferenceViewerButtonClicked(TArray<FAssetData> RefAssetData)
 {
-	return GetAllAssetData(FolderPathsSelected[0]);
+    ProcessAssetData(RefAssetData, [](const TArray<FAssetIdentifier>& AssetIdentifiers)
+    {
+        IAssetManagerEditorModule::Get().OpenReferenceViewerUI(AssetIdentifiers);
+    });
 }
 
-TArray<TSharedPtr<FAssetData>> FFolderCleanerModule::GetAllAssetDataUnderProjectDirFolder()
+void FFolderCleanerModule::OnSizeMapButtonClicked(TArray<FAssetData> RefAssetData)
 {
-	return GetAllAssetData(FolderCleaner::ProjectDirectory);
+    ProcessAssetData(RefAssetData, [](const TArray<FAssetIdentifier>& AssetIdentifiers)
+    {
+        IAssetManagerEditorModule::Get().OpenSizeMapUI(AssetIdentifiers);
+    });
 }
 
-bool FFolderCleanerModule::DeleteSingleAssetForAssetList(const FAssetData& AssetDataToDelete)
+void FFolderCleanerModule::ProcessAssetData(const TArray<FAssetData>& RefAssetData, TFunction<void(const TArray<FAssetIdentifier>&)> ProcessFunction)
 {
-	TArray<FAssetData> AssetDataForDeletion;
-	AssetDataForDeletion.Add(AssetDataToDelete);
-
-	return ObjectTools::DeleteAssets(AssetDataForDeletion) > 0;
-}
-
-bool FFolderCleanerModule::OpenAsset(const FAssetData AssetDataToOpen)
-{
-	if (! AssetDataToOpen.IsValid()) return false;
-
-	const UObject* LoadedAsset = UEditorAssetLibrary::LoadAsset(AssetDataToOpen.ToSoftObjectPath().ToString());
-	if (! LoadedAsset) return false;
-
-	return AssetViewUtils::OpenEditorForAsset(AssetDataToOpen.ToSoftObjectPath().ToString());
-}
-
-bool FFolderCleanerModule::DeleteMultipleAssetsForAsssetList(const TArray<FAssetData> AssetArrayToDelete)
-{
-	return ObjectTools::DeleteAssets(AssetArrayToDelete) > 0;
+	TArray<FAssetIdentifier> AssetIdentifiers;
+	IAssetManagerEditorModule::ExtractAssetIdentifiersFromAssetDataList(RefAssetData, AssetIdentifiers);
+	ProcessFunction(AssetIdentifiers);
 }
 
 void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
@@ -266,19 +271,12 @@ void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
 
 	for (const FString& FolderPath : FolderPathsArray)
 	{
-		if (FolderPath.Contains(TEXT("Developers")) ||			//
-			FolderPath.Contains(TEXT("Collections")) ||			//
-			FolderPath.Contains(TEXT("__ExternalActors__")) ||	//
-			FolderPath.Contains(TEXT("__ExternalObjects__")))	//
-			continue;											//
-
-		if (! UEditorAssetLibrary::DoesDirectoryExist(FolderPath)) continue;
+		if (FolderCleaner::IsExcludedFolder(FolderPath) || ! UEditorAssetLibrary::DoesDirectoryExist(FolderPath)) continue;
 
 		if (! UEditorAssetLibrary::DoesDirectoryHaveAssets(FolderPath))
 		{
 			EmptyFolderPathsNames.Append(FolderPath);
 			EmptyFolderPathsNames.Append(TEXT("\n"));
-
 			EmptyFoldersPathsArray.Add(FolderPath);
 		}
 	}
@@ -289,13 +287,10 @@ void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
 		return;
 	}
 
-	const EAppReturnType::Type ConfirmResult = FolderCleaner::ShowMessageDialog(	//
-		EAppMsgType::OkCancel,														//
-		TEXT("Empty Folders founds in:\n") +										//
-		EmptyFolderPathsNames + TEXT("\nWould you like to delete all?"),			//
-		false);																		//
+	const FString Msg = TEXT("Empty Folders founds in:\n") + EmptyFolderPathsNames + TEXT("\nWould you like to delete all?");
+	const EAppReturnType::Type ConfirmResult = FolderCleaner::ShowMessageDialog(EAppMsgType::YesNoCancel,Msg,false);
 
-	if (ConfirmResult == EAppReturnType::Cancel) return;
+	if (ConfirmResult == EAppReturnType::Cancel || ConfirmResult == EAppReturnType::No) return;
 
 	for (const FString& EmptyFolderPath : EmptyFoldersPathsArray)
 	{
@@ -316,6 +311,8 @@ void FFolderCleanerModule::OnDeleteEmptyFolderButtonClicked()
 
 void FFolderCleanerModule::FixupRedirectors() 
 {
+	/** Handler for when "Fix up Redirectors in Folder" is selected */
+
 	TArray<UObjectRedirector*> RedirectorsToFixArray;
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::Get().LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 

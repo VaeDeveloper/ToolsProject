@@ -29,7 +29,6 @@ namespace FolderCleaner
 	static constexpr float TitleInfoFontTextSize = 15.0f;
 	static const FString TitleTextColor = "2A6FFFFF";
 
-
 	static FFolderCleanerModule& GetFolderModule()
 	{
 		return FModuleManager::LoadModuleChecked<FFolderCleanerModule>(FolderCModuleName);
@@ -258,7 +257,6 @@ TSharedRef<ITableRow> SFolderCleaning::OnGenerateRowForList(TSharedPtr<FAssetDat
 	FSlateFontInfo AssetNameFont = GetEmboseedTextFont();
 	AssetNameFont.Size = 15;
 	
-
 #pragma region ListRowWidget
 	// Create the row widget for the asset list
 	TSharedRef<STableRow<TSharedPtr<FAssetData>>> ListViewRowWidget =
@@ -493,12 +491,12 @@ void SFolderCleaning::OnComboSelectionChange(TSharedPtr<FString> SelecetedOption
 	}
 	else if (*SelecetedOption.Get() == FolderCleaner::FAssetLists::UnusedAssets)
 	{
-		Module.ListUnusedAssetForAssetList(StoredAssetList, VisibleAssetsList);
+		Module.FilterUnusedAssets(StoredAssetList, VisibleAssetsList);
 		RefreshAssetListView();
 	}
 	else if (*SelecetedOption.Get() == FolderCleaner::FAssetLists::SameNameAssets)
 	{
-		Module.ListSameNameAssetsForAssetList(StoredAssetList, VisibleAssetsList);
+		Module.FilterDuplicateAssets(StoredAssetList, VisibleAssetsList);
 		RefreshAssetListView();
 	}
 }
@@ -703,7 +701,7 @@ FReply SFolderCleaning::OnDeleteButtonClicked(TSharedPtr<FAssetData> ClickedAsse
 	}
 
 	FFolderCleanerModule& Module = FolderCleaner::GetFolderModule();
-	const bool bAssetDeleted = Module.DeleteSingleAssetForAssetList(*ClickedAssetData.Get());
+	const bool bAssetDeleted = Module.DeleteSingleAsset(*ClickedAssetData.Get());
 
 	if (bAssetDeleted)
 	{
@@ -781,7 +779,7 @@ FReply SFolderCleaning::OnDeleteAllButtonClicked()
 		AssetDataToDelete.Add(*Data.Get());
 	}
 
-	const bool bAssetDeleted = FolderCleaner::GetFolderModule().DeleteMultipleAssetsForAsssetList(AssetDataToDelete);
+	const bool bAssetDeleted = FolderCleaner::GetFolderModule().DeleteMultiplyAsset(AssetDataToDelete);
 
 	if (bAssetDeleted)
 	{

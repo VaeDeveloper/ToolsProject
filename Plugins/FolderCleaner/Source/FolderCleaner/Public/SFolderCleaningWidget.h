@@ -93,11 +93,11 @@ namespace FolderCleaner
 		if (bShowMsgAsWarning)
 		{
 			FText MessageTitle = FText::FromString(TEXT("Warning"));
-			return FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(Message), &MessageTitle);
+			return FMessageDialog::Open(MessageType, FText::FromString(Message), &MessageTitle);
 		}
 		else
 		{
-			return FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(Message));
+			return FMessageDialog::Open(MessageType, FText::FromString(Message));
 		}
 	}
 
