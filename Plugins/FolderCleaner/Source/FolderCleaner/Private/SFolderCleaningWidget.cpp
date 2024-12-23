@@ -52,10 +52,11 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 
 	GetTypeOfAssets(InArgs._AssetDataToStore);
 
+#pragma region SlateRegion
+
 	FSlateFontInfo TitleTextFontInfo = GetEmboseedTextFont();
 	TitleTextFontInfo.Size = FolderCleaner::TitleInfoFontTextSize;
 
-#pragma region SlateRegion
 	/* clang-format off */
 	ChildSlot[
 		SNew(SVerticalBox)

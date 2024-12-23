@@ -116,7 +116,6 @@ namespace FolderCleaner
 
 		FSlateNotificationManager::Get().AddNotification(Info);
 	}
-
 }
 
 /**
