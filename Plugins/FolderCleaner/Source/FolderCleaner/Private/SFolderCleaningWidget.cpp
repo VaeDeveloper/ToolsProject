@@ -208,10 +208,10 @@ void SFolderCleaning::Construct(const FArguments& InArgs)
 #pragma endregion SlateRegion
 }
 
-void SFolderCleaning::GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetDatas)
+void SFolderCleaning::GetTypeOfAssets(TArray<TSharedPtr<FAssetData>> AssetDataList)
 {
 	TSet<FString> UniqueAssetNames; 
-	for (const auto& AssetData : AssetDatas)
+	for (const auto& AssetData : AssetDataList)
 	{
 		if (AssetData.IsValid())
 		{
