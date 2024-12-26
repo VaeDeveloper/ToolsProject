@@ -307,7 +307,7 @@ public:
 	 * @param AssetData The asset data associated with this button.
 	 * @return A shared reference to the constructed search button.
 	 */
-	TSharedRef<SButton> SearchAssetInBrowser(TSharedPtr<FAssetData>& AssetData);
+	TSharedRef<SButton> SearchAssetInBrowser(TSharedPtr<FAssetData>& AssetDataList);
 
 	/**
 	 * Constructs a text block widget for the tab buttons.
