@@ -6,7 +6,19 @@ public class ToolsProjectEditor : ModuleRules
 	{
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "UnrealEd"});
+		PublicDependencyModuleNames.AddRange(new string[]
+		{ 
+			"Core", 
+			"CoreUObject", 
+			"Engine", 
+			"UnrealEd",
+			"LevelEditor",
+			"Slate",
+			"SlateCore",
+			"Projects",
+			"DataAssetManager",
+
+		});
  
 		PublicIncludePaths.AddRange(new string[] {"ToolsProjectEditor/Public"});
 		PrivateIncludePaths.AddRange(new string[] {"ToolsProjectEditor/Private"});
