@@ -28,7 +28,7 @@ Each plugin uses **Slate** to create custom UIs, allowing seamless integration i
 
 ## 📚 Requirements
 
-- Unreal Engine 5.5   
+- Unreal Engine 5.4 or high
 
 ## ⚠️ Project Status
 
