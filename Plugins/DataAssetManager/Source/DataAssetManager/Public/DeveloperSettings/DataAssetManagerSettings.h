@@ -8,13 +8,9 @@
 
 
 /**
- * @brief Settings for the Data Asset Manager.
+ * Settings for the Data Asset Manager.
  *
- * This class represents the settings for the DataAssetManager plugin, which can be configured by the user
- * through the Unreal Engine editor interface. All settings are stored in a configuration file and can be modified
- * during runtime.
- *
- * @note Settings are saved in the configuration file, and any changes require the module or editor to be reloaded.
+ * Settings are saved in the configuration file, and any changes require the module or editor to be reloaded.
  */
 UCLASS(Config = Engine, defaultconfig)
 class DATAASSETMANAGER_API UDataAssetManagerSettings : public UDeveloperSettings
