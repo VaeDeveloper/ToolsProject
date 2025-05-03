@@ -8,6 +8,11 @@
 			"Name": "ToolsProject",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"name": "ToolsProjectEditor",
+			"type": "Editor",
+			"loadingPhase": "PostEngineInit"
 		}
 	],
 	"Plugins": [
