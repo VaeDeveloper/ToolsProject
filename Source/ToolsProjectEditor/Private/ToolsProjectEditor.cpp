@@ -1,6 +1,7 @@
 #include "ToolsProjectEditor.h"
 #include "Editor/LevelEditor/Public/LevelEditor.h"
 #include "DataAssetManager.h"
+#include "ValidatorX.h"
 
 DEFINE_LOG_CATEGORY(ToolsProjectEditor);
 
@@ -64,10 +65,16 @@ void FToolsProjectEditor::FillCustomMenu(FMenuBuilder& MenuBuilder)
 		FUIAction(FExecuteAction::CreateLambda([] {})));
 
 	MenuBuilder.AddMenuEntry(
-		FText::FromString("Validation Command Center Plugin "),
-		FText::FromString("Open Data Asset Manager Plugin "),
+		FText::FromString("ValidatorX "),
+		FText::FromString("Open ValidatorX Plugin "),
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
-		FUIAction(FExecuteAction::CreateLambda([] {})));
+		FUIAction(FExecuteAction::CreateLambda([] 
+			{
+				if (IValidatorXModule* Module = FModuleManager::GetModulePtr< IValidatorXModule>("ValidatorX"))
+				{
+					Module->OpenValidatorXTab();
+				}
+			})));
 
 	MenuBuilder.EndSection();
 }

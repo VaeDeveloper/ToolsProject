@@ -9,21 +9,31 @@ DEFINE_LOG_CATEGORY_STATIC(LogValidatorX, All, All);
 
 #define LOCTEXT_NAMESPACE "FValidatorXModule"
 
-
-
+const FName FValidatorXModule::ValidatorXTabName = "ValidatorX";
 
 void FValidatorXModule::StartupModule()
 {
 	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FValidatorXModule::HandlePostEngineInit);
 
-    FGlobalTabmanager::Get()->RegisterNomadTabSpawner("ValidatorX_Tab", FOnSpawnTab::CreateRaw(this, &FValidatorXModule::OnSpawnValidatorXTab))
+    FGlobalTabmanager::Get()->RegisterNomadTabSpawner(ValidatorXTabName, FOnSpawnTab::CreateRaw(this, &FValidatorXModule::OnSpawnValidatorXTab))
         .SetDisplayName(NSLOCTEXT("ValidatorX", "TabTitle", "ValidatorX"))
-        .SetMenuType(ETabSpawnerMenuType::Enabled);
+        .SetMenuType(GetVisibleModule());
 }
 
 void FValidatorXModule::ShutdownModule()
 {
+
 }
+
+ETabSpawnerMenuType::Type FValidatorXModule::GetVisibleModule() const
+{
+	if(FModuleManager::Get().IsModuleLoaded("ToolProjectEditor"))
+	{
+		ETabSpawnerMenuType::Enabled;
+	}
+	return ETabSpawnerMenuType::Hidden;
+}
+
 void FValidatorXModule::HandlePostEngineInit()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Startup Begin"));
@@ -68,7 +78,10 @@ TSharedRef<SDockTab> FValidatorXModule::OnSpawnValidatorXTab(const FSpawnTabArgs
 		];
 }
 
-
+void FValidatorXModule::OpenValidatorXTab()
+{
+	FGlobalTabmanager::Get()->TryInvokeTab(ValidatorXTabName);
+}
 
 #undef LOCTEXT_NAMESPACE
 	
