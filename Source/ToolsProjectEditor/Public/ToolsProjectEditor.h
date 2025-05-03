@@ -17,9 +17,19 @@ class FToolsProjectEditor : public IModuleInterface
 	virtual void ShutdownModule() override;
 
 private:
+	/**
+	 * Creates and adds a custom menu entry to the main menu bar.
+	 *
+	 * @param MenuBuilder Reference to the FMenuBarBuilder used to build the menu bar.
+	 */
 	void MakeCustomMenu(FMenuBarBuilder& MenuBuilder);
-	void FillCustomMenu(FMenuBuilder& MenuBuilder);
 
+	/**
+	 * Populates the custom menu with menu items and actions.
+	 *
+	 * @param MenuBuilder Reference to the FMenuBuilder used to build the menu.
+	 */
+	void FillCustomMenu(FMenuBuilder& MenuBuilder);
 
 	/**
 	 * A shared pointer to an extensibility manager for the Level Editor
@@ -30,6 +40,7 @@ private:
 	 * functionality to be added.
 	 */
 	TSharedPtr<FExtensibilityManager> LevelEditorMenuExtensibilityManager;
+
 	/**
 	 * A shared pointer to a menu extender for the Level Editor menu.
 	 *
@@ -38,5 +49,4 @@ private:
 	 * menu.
 	 */
 	TSharedPtr<FExtender> MenuExtender;
-
 };

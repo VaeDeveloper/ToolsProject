@@ -36,7 +36,6 @@ void SDeveloperSettingsWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 				.Text(FText::FromString("Restart Plugin "))
 
 			]
-
 			+ SHorizontalBox::Slot()
 			.HAlign(HAlign_Left)
 			.VAlign(VAlign_Center)
@@ -51,7 +50,7 @@ void SDeveloperSettingsWidget::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 					.HAlign(HAlign_Center)
 					.OnClicked_Lambda([]()
 					{
-						FDataAssetManagerModule& Module = FModuleManager::LoadModuleChecked<FDataAssetManagerModule>(TEXT("DataAssetManager"));
+						FDataAssetManagerModule& Module = FModuleManager::LoadModuleChecked<FDataAssetManagerModule>(("DataAssetManager"));
 						Module.RestartWidget();
 						return FReply::Handled();
 					})

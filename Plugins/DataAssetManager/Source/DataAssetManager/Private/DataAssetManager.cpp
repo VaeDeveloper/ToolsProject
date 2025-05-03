@@ -1,27 +1,27 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "DataAssetManager.h"
-#include "Misc/MessageDialog.h"
-#include "ToolMenus.h"
+#include "Modules/ModuleManager.h"
+#include "Editor/EditorEngine.h"
+#include "StatusBarSubsystem.h"
+#include "TimerManager.h"
+#include "DeveloperSettings/DataAssetManagerSettings.h"
 #include "UI/SDataAssetManagerWidget.h"
 #include "UI/SDeveloperSettingsWidget.h"
-#include "DeveloperSettings/DataAssetManagerSettings.h"
-#include "StatusBarSubsystem.h"
-#include "UI/SDeveloperSettingsWidget.h"
-#include "Tickable.h"
-#include "Editor/EditorEngine.h"
-#include "TimerManager.h"
 
-#include "Modules/ModuleManager.h"
-
-/* clang-format off */
 const FName FDataAssetManagerModule::DataAssetManagerTabName = FName("DataAssetManager");
 
 #define LOCTEXT_NAMESPACE "FDataAssetManagerModule"
 
 namespace DataAssetManager
 {
+	namespace ModuleName
+	{
+		const FName ToolProjectEditor(TEXT("ToolProjectEditor"));
+	}
+
 	constexpr float TabReopenDelaySeconds = 1.0f;
+	const FName StatusBarName(TEXT("DataAssetManagerStatusBar"));
 }
 
 void FDataAssetManagerModule::StartupModule()
@@ -48,9 +48,9 @@ void FDataAssetManagerModule::ShutdownModule()
 
 ETabSpawnerMenuType::Type FDataAssetManagerModule::GetVisibleModule() const
 {
-	if (FModuleManager::Get().IsModuleLoaded("ToolProjectEditor"))
+	if (FModuleManager::Get().IsModuleLoaded(DataAssetManager::ModuleName::ToolProjectEditor))
 	{
-		ETabSpawnerMenuType::Enabled;
+		return ETabSpawnerMenuType::Enabled;
 	}
 	return ETabSpawnerMenuType::Hidden;
 }
@@ -58,11 +58,10 @@ ETabSpawnerMenuType::Type FDataAssetManagerModule::GetVisibleModule() const
 TSharedRef<SDockTab> FDataAssetManagerModule::CreateDataAssetManagerTab(const FSpawnTabArgs& Args)
 {
 	TSharedRef<SDockTab> DataAssetManagerTab = SNew(SDockTab).TabRole(ETabRole::NomadTab);
-
 	UStatusBarSubsystem* StatusBarSubsystem = GEditor->GetEditorSubsystem<UStatusBarSubsystem>();
 	if (StatusBarSubsystem)
 	{
-		TSharedRef<SWidget> StatusBarWidget = StatusBarSubsystem->MakeStatusBarWidget(FName("DataAssetManagerStatusBar"), DataAssetManagerTab);
+		TSharedRef<SWidget> StatusBarWidget = StatusBarSubsystem->MakeStatusBarWidget(DataAssetManager::StatusBarName, DataAssetManagerTab);
 
 		DataAssetManagerTab->SetContent(
 			SNew(SVerticalBox)
@@ -93,6 +92,7 @@ void FDataAssetManagerModule::RestartWidget()
 	{
 		DataAssetManagerTab->RequestCloseTab();
 
+		// Set timer to reopen the tab after a short delay.
 		FTimerHandle TimerHandle;
 		GEditor->GetTimerManager().Get().SetTimer(TimerHandle, []()
 			{
