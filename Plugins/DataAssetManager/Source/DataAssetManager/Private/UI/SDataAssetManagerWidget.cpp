@@ -286,7 +286,7 @@ void SDataAssetManagerWidget::ShowDocumentation()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Documentation URL is not set in settings."));
+		UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("Documentation URL is not set in settings."));
 	}
 }
 
@@ -1269,7 +1269,7 @@ void SDataAssetManagerWidget::InitializeAssetTypeComboBox(TArray<TSharedPtr<FAss
 		}
 	}
 	// Debug !!!
-	UE_LOG(LogTemp, Warning, TEXT("%s FilteredDataAssets: %i"), *FString(__FUNCTION__), FilteredDataAssets.Num());
+	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s FilteredDataAssets: %i"), *FString(__FUNCTION__), FilteredDataAssets.Num());
 }
 
 void SDataAssetManagerWidget::FocusOnNewlyAddedAsset(const FAssetData& NewAssetData)
