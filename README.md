@@ -6,10 +6,7 @@ This project brings together several tools to improve content management, valida
 
 GitHub: [https://github.com/VaeDeveloper/ToolsProject](https://github.com/VaeDeveloper/ToolsProject)
 
-## 🏛️ ToolsProjectEditor Module
 
-**ToolsProjectEditor** serves as the central module that brings together multiple editor tools for Unreal Engine.  
-It provides shared infrastructure, common UI patterns, and a unified top-bar menu for all integrated tools.
 
 ## ✨ Tools Included
 
@@ -21,6 +18,11 @@ It provides shared infrastructure, common UI patterns, and a unified top-bar men
 | **ValidatorX**          | Runs automated validation rules to detect issues like missing references, unused variables, or wrong settings. |
 | **ConsoleCommandCenter** | Centralized interface to execute, manage, and organize console commands within the editor. |
 
+## 🏛️ ToolsProjectEditor Module
+
+**ToolsProjectEditor** serves as the central module that brings together multiple editor tools for Unreal Engine.  
+It provides shared infrastructure, common UI patterns, and a unified top-bar menu for all integrated tools.
+
 ## ⚙️ Architecture
 
 The **ToolsProject** module is designed to be modular. Each tool is implemented as a standalone plugin within the module, providing flexibility and extensibility. 
@@ -28,7 +30,7 @@ Each plugin uses **Slate** to create custom UIs, allowing seamless integration i
 
 ## 📚 Requirements
 
-- Unreal Engine 5.5   
+- Unreal Engine 5.4 or high
 
 ## ⚠️ Project Status
 
