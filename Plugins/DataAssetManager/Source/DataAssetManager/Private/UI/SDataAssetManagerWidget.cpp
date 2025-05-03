@@ -323,41 +323,6 @@ void SDataAssetManagerWidget::SaveAllData()
 	}
 }
 
-void SDataAssetManagerWidget::OnValidateDataAsset()
-{
-	IDataValidationModule* const DataValidationModule = FModuleManager::Get().GetModulePtr<IDataValidationModule>(DataAssetManager::ModuleName::DataValidation);
-	if (!DataValidationModule)
-	{
-		UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s DataValidation module is not loaded!"), *FString(__FUNCTION__));
-		return;
-	}
-
-	TArray<FAssetData> ValidateAsset;
-	ValidateAsset.Add(*SelectedAsset);
-	DataValidationModule->ValidateAssets(ValidateAsset, false, EDataValidationUsecase::Manual);
-}
-
-void SDataAssetManagerWidget::OnValidateAllDataAsset()
-{
-	IDataValidationModule* const DataValidationModule = FModuleManager::Get().GetModulePtr<IDataValidationModule>(DataAssetManager::ModuleName::DataValidation);
-	if (!DataValidationModule)
-	{
-		UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s DataValidation module is not loaded!"), *FString(__FUNCTION__));
-		return;
-	}
-
-	TArray<FAssetData> AssetsToValidate;
-	for (const TSharedPtr<FAssetData>& AssetDataPtr : DataAssets)
-	{
-		if (AssetDataPtr.IsValid())
-		{
-			AssetsToValidate.Add(*AssetDataPtr);
-		}
-	}
-
-	DataValidationModule->ValidateAssets(AssetsToValidate, false, EDataValidationUsecase::Manual);
-}
-
 void SDataAssetManagerWidget::SyncContentBrowserToSelectedAsset()
 {
 	const FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked<FContentBrowserModule>(DataAssetManager::ModuleName::ContentBrowser);

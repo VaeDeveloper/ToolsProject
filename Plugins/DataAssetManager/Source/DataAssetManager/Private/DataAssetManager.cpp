@@ -3,13 +3,13 @@
 #include "DataAssetManager.h"
 #include "Modules/ModuleManager.h"
 
-#if WITH_EDITOR
+// if WITH_EDITOR
 #include "Editor/EditorEngine.h"
 #include "StatusBarSubsystem.h"
 #include "DeveloperSettings/DataAssetManagerSettings.h"
 #include "UI/SDataAssetManagerWidget.h"
 #include "UI/SDeveloperSettingsWidget.h"
-#endif // WITH_EDITOR
+
 
 const FName FDataAssetManagerModule::DataAssetManagerTabName = FName("DataAssetManager");
 
@@ -28,11 +28,10 @@ namespace DataAssetManager
 
 void FDataAssetManagerModule::StartupModule()
 {
-#if WITH_EDITOR
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>(DataAssetManager::ModuleName::PropertyEditor);
 	PropertyEditorModule.RegisterCustomClassLayout(UDataAssetManagerSettings::StaticClass()->GetFName(),
 	FOnGetDetailCustomizationInstance::CreateStatic(&SDeveloperSettingsWidget::MakeInstance));
-#endif
+
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
 	DataAssetManagerTabName,
 	FOnSpawnTab::CreateRaw(this, &FDataAssetManagerModule::CreateDataAssetManagerTab))
@@ -42,13 +41,11 @@ void FDataAssetManagerModule::StartupModule()
 
 void FDataAssetManagerModule::ShutdownModule()
 {
-#if WITH_EDITOR
 	if (FModuleManager::Get().IsModuleLoaded(DataAssetManager::ModuleName::PropertyEditor))
 	{
 		FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>(DataAssetManager::ModuleName::PropertyEditor);
 		PropertyEditorModule.UnregisterCustomClassLayout(UDataAssetManagerSettings::StaticClass()->GetFName());
 	}
-#endif
 }
 
 ETabSpawnerMenuType::Type FDataAssetManagerModule::GetVisibleModule() const
@@ -63,7 +60,6 @@ ETabSpawnerMenuType::Type FDataAssetManagerModule::GetVisibleModule() const
 TSharedRef<SDockTab> FDataAssetManagerModule::CreateDataAssetManagerTab(const FSpawnTabArgs& Args)
 {
 	TSharedRef<SDockTab> DataAssetManagerTab = SNew(SDockTab).TabRole(ETabRole::NomadTab);
-#if WITH_EDITOR
 	UStatusBarSubsystem* StatusBarSubsystem = GEditor->GetEditorSubsystem<UStatusBarSubsystem>();
 	if(StatusBarSubsystem)
 	{
@@ -87,9 +83,6 @@ TSharedRef<SDockTab> FDataAssetManagerModule::CreateDataAssetManagerTab(const FS
 	{
 		DataAssetManagerTab->SetContent(SNew(SDataAssetManagerWidget));
 	}
-#else
-	DataAssetManagerTab->SetContent(SNew(SDataAssetManagerWidget));
-#endif
 
 	return DataAssetManagerTab;
 }

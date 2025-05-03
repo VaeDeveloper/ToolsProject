@@ -14,7 +14,6 @@
 class UDataAssetManagerSettings;
 class SLayeredImage;
 
-/* clang-format off */
 namespace DataAssetManager
 {
 	namespace ModuleName
@@ -22,12 +21,12 @@ namespace DataAssetManager
 		constexpr const TCHAR* AssetTools		= TEXT("AssetTools");
 		constexpr const TCHAR* AssetRegistry	= TEXT("AssetRegistry");
 		constexpr const TCHAR* ContentBrowser	= TEXT("ContentBrowser");
-		constexpr const TCHAR* DataValidation	= TEXT("DataValidation");
 		constexpr const TCHAR* MessageLog		= TEXT("MessageLog");
 		constexpr const TCHAR* OutputLog		= TEXT("OutputLog");
 		constexpr const TCHAR* Settings			= TEXT("Settings");
 		constexpr const TCHAR* DataAssetManager = TEXT("DataAssetManager");
 		constexpr const TCHAR* PropertyEditor	= TEXT("PropertyEditor");
+
 	}
 	
 	namespace Private
@@ -140,8 +139,6 @@ protected:
 	virtual void ShowDocumentation() override;
 	virtual void SaveDataAsset() override;
 	virtual void SaveAllData() override;
-	virtual void OnValidateDataAsset() override;
-	virtual void OnValidateAllDataAsset() override;
 	virtual void SyncContentBrowserToSelectedAsset() override;
 	virtual void CopyToClipboard(bool bCopyPaths) override;
 	virtual void OpenReferenceViewer() override;
@@ -765,7 +762,10 @@ private:
 	 */
 	TArray<FName, TFixedAllocator<NumColumnOrder>> ColumnOrder;
 
-
+	/**
+	 * Holds the currently active filters in the data asset manager.
+	 * Each filter is represented as a string.
+	 */
 	TSet<FString> ActiveFilters;	
 
 #pragma endregion Data

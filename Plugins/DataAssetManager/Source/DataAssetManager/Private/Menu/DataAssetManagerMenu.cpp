@@ -6,9 +6,6 @@
 
 #define LOCTEXT_NAMESPACE "SDataAssetManagerWidget"
 
-
-/* clang-format off */
-
 #define CREATE_ACTION(Manager, Method) \
 	FUIAction(FExecuteAction::CreateSP(Manager, Method))
 
@@ -40,7 +37,8 @@ namespace DataAssetManagerMenu
 		const FSlateIcon SaveAsset = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.SaveAllCurrentFolder");
 		const FSlateIcon SaveAll = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.SaveAllCurrentFolder");
 		const FSlateIcon Validate = FSlateIcon(IconStyle::AppStyle, "Icons.Adjust");
-
+		const FSlateIcon Rename = FSlateIcon(IconStyle::AppStyle, "GenericCommands.Rename");
+		const FSlateIcon Delete = FSlateIcon(IconStyle::AppStyle, "GenericCommands.Delete");
 		// Assets Menu
 		const FSlateIcon OpenAsset = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.ShowInExplorer");
 		const FSlateIcon FindInCB = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.ShowInExplorer");
@@ -104,6 +102,8 @@ namespace DataAssetManagerMenu
 		const FText AuditAssetTooltip = LOCTEXT("AuditAssetTooltip", "Audit asset metadata");
 		const FText RevisionControlText = LOCTEXT("RevisionControl", "Revision Control");
 		const FText RevisionControlTooltip = LOCTEXT("RevisionControlTooltip", "Open revision control menu");
+		const FText ShowAssetMetadataText = LOCTEXT("ShowAssetMetaData", "Show Asset Metadata");
+		const FText ShowAssetMetadataTooltip = LOCTEXT("ShowAssetMetadataTooltip", "Display the metadata information of the selected asset.");
 
 		// Settings Menu
 		const FText DebugSectionText = LOCTEXT("DebugSection", "Debug");
@@ -167,14 +167,14 @@ void FDataAssetManagerMenu::FillFileMenu(FMenuBuilder& MenuBuilder, TSharedRef<I
 	MenuBuilder.AddMenuEntry(
 		Texts::RenameText,
 		Texts::RenameTooltip,
-		Icons::SaveAll,
+		Icons::Rename,
 		CREATE_ACTION_WITH_CAN_EXECUTE(Manager, &IDataAssetManagerInterface::FocusOnSelectedAsset, 
 			&IDataAssetManagerInterface::CanRename));
 
 	MenuBuilder.AddMenuEntry(
 		Texts::DeleteText,
 		Texts::DeleteTooltip,
-		Icons::SaveAll,
+		Icons::Delete,
 		CREATE_ACTION(Manager, &IDataAssetManagerInterface::DeleteDataAsset));
 	MenuBuilder.EndSection();
 }
@@ -196,8 +196,8 @@ void FDataAssetManagerMenu::FillAssetsMenu(FMenuBuilder& MenuBuilder, TSharedRef
 		CREATE_ACTION(Manager, &IDataAssetManagerInterface::SyncContentBrowserToSelectedAsset));
 
 	MenuBuilder.AddMenuEntry(
-		FText::FromString("Show Asset Metadata"),
-		FText::FromString(""),
+		Texts::ShowAssetMetadataText,
+		Texts::ShowAssetMetadataTooltip,
 		Icons::FindInCB,
 		CREATE_ACTION(Manager, &IDataAssetManagerInterface::ShowAssetMetaData));
 

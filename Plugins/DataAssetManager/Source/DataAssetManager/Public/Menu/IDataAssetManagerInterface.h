@@ -70,22 +70,6 @@ public:
 	virtual void SaveAllData() = 0;
 	
 	/**
-	 * @brief Validates the current Data Asset.
-	 *
-	 * This method checks the integrity and validity of the selected Data Asset. It may perform various validation
-	 * checks to ensure the asset is correctly structured and free of errors.
-	 */
-	virtual void OnValidateDataAsset() = 0;
-	
-	/**
-	 * @brief Validates all Data Assets.
-	 *
-	 * This method performs validation checks on all Data Assets in the system. It ensures that every asset is valid
-	 * and free of errors, ensuring consistency across the entire dataset.
-	 */
-	virtual void OnValidateAllDataAsset() = 0;
-
-	/**
 	 * @brief Syncs the Content Browser to the selected Data Asset.
 	 *
 	 * This method ensures that the Content Browser reflects the current selection of the Data Asset. It may update
@@ -188,7 +172,9 @@ public:
 	 */
 	virtual bool CanRename() const = 0;
 
-
+	/**
+	 * @ brief Show Asset Meta Data Widget 
+	 */
 	virtual void ShowAssetMetaData() = 0;
 
 };
