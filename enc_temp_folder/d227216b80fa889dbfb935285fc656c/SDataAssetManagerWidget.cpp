@@ -152,7 +152,7 @@ namespace DataAssetManager
 		}
 
 		/**
-		 * @brief Creates a new DataAsset of the specified class in the selected or provided directory.
+		 * Creates a new DataAsset of the specified class in the selected or provided directory.
 		 * The function checks the validity of the class and ensures it is a subclass of UDataAsset.
 		 * It then attempts to generate a unique name for the new asset by checking for existing assets
 		 * with the same base name in the selected directory. The new asset is created using the AssetTools module
@@ -200,7 +200,7 @@ namespace DataAssetManager
 		}
 
 		/**
-		 * @brief Processes asset data by converting it to asset identifiers and executing a callback.
+		 * Processes asset data by converting it to asset identifiers and executing a callback.
 		 * 
 		 * @param RefAssetData Array of asset data to process
 		 * @param ProcessFunction Callback function that receives processed asset identifiers
@@ -279,15 +279,21 @@ void SDataAssetManagerWidget::OpenAuditAsset()
 
 void SDataAssetManagerWidget::ShowDocumentation()
 {
-	const FString& URL = GetDefault<UDataAssetManagerSettings>()->DocumentationURL;
-	if(!URL.IsEmpty())
-	{
-		FPlatformProcess::LaunchURL(*URL, nullptr, nullptr);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Documentation URL is not set in settings."));
-	}
+	//FString AbsolutePath = FPaths::ConvertRelativePathToFull(
+	//FPaths::Combine(FPaths::ProjectDir(), TEXT("Documents/DataAssetManagerDoc.docx")));
+	//
+	//if (FPaths::FileExists(AbsolutePath))
+	//{
+	//	FPlatformProcess::LaunchFileInDefaultExternalApplication(*AbsolutePath);
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("File not found: %s"), *AbsolutePath);
+	//}
+	FPlatformProcess::LaunchURL(
+		TEXT("https://docs.google.com/document/d/1RxlCTzxBwLvOreQw0OWlSajq8Fx5KWnwMHdbUQ7FSDs/edit?usp=sharing"), 
+		nullptr, 
+		nullptr);
 }
 
 void SDataAssetManagerWidget::SaveDataAsset()
@@ -657,6 +663,7 @@ private:
     FOnAssetDoubleClicked OnAssetDoubleClicked{};
     FOnRegisterEditableText OnRegisterEditableText{};
 	FOnAssetMouseButtonDown MouseButtonDown{};
+
 	FDelegateHandle OnPackageDirtyStateChangedHandle{};
 };
 

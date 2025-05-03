@@ -46,10 +46,6 @@ public:
 	/** List of asset types to exclude from scanning. */
 	UPROPERTY(Config, EditAnywhere, Category = "Settings", meta = (AllowedClasses = "/Script/Engine.DataAsset"))
 	TArray<TSubclassOf<UDataAsset>> ExcludedScanAssetTypes;
-
-	/** URL to the online documentation. */
-	UPROPERTY(Config, EditAnywhere, Category = "Settings")
-	FString DocumentationURL; 
 };
 
 
