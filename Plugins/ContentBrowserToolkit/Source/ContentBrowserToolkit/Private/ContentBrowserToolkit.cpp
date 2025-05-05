@@ -41,7 +41,7 @@ namespace CBToolkit
 		if (bShowMessageAsWarning)
 		{
 			FText MessageTitle = FText::FromString(TEXT("Warning"));
-			return FMessageDialog::Open(MessageType, FText::FromString(Message), &MessageTitle);
+			return FMessageDialog::Open(MessageType, FText::FromString(Message), MessageTitle);
 		}
 		else
 		{

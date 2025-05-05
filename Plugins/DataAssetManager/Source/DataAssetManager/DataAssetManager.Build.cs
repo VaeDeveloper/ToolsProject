@@ -49,21 +49,18 @@ public class DataAssetManager : ModuleRules
 				"ContentBrowser",
 				"DeveloperSettings",
 				"EditorScriptingUtilities",
-				"StateTreeModule",
-                "AssetManagerEditor",
+				"AssetManagerEditor",
 				"SourceControl",
 				"ClassViewer",
 				"ToolWidgets",
 				"StatusBar",
-                "BlueprintGraph",
-                "Kismet",
-                "DataValidation",
+				"BlueprintGraph",
+				"Kismet",
 				"SettingsEditor",
 				"PropertyEditor",
 				"EditorWidgets",
-                "MessageLog",
+				"MessageLog",
 				"OutputLog"
-
             }
             );
 		

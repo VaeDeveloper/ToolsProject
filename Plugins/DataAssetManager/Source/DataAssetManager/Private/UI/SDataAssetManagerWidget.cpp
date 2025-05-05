@@ -43,12 +43,12 @@
 #include "Selection.h"
 #include "RevisionControlStyle/RevisionControlStyle.h"
 #include "UObject/ObjectSaveContext.h"
+#include "UObject/SavePackage.h"
+
 // Editor-only 
-#if WITH_EDITOR
 #include "AssetManagerEditorModule.h"
 #include "AssetToolsModule.h"
 #include "ContentBrowserModule.h"
-#include "DataValidationModule.h"
 #include "DeveloperSettings/DataAssetManagerSettings.h"
 #include "Editor.h"
 #include "Editor/UnrealEd/Classes/Factories/DataAssetFactory.h"
@@ -63,7 +63,6 @@
 #include "ToolMenus.h"
 #include "WidgetDrawerConfig.h"
 #include "Editor/ContentBrowser/Private/ContentBrowserSingleton.h"
-#endif 
 
 /* clang-format off */
 
@@ -143,7 +142,7 @@ namespace DataAssetManager
 			if (bShowMsgAsWarning)
 			{
 				FText MessageTitle = FText::FromString(TEXT("Warning"));
-				return FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(Message), &MessageTitle);
+				return FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(Message), MessageTitle);
 			}
 			else
 			{
@@ -181,7 +180,9 @@ namespace DataAssetManager
 
 			const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(DataAssetManager::ModuleName::AssetRegistry);
 			int32 Suffix = 1;
-			while (AssetRegistryModule.Get().GetAssetByObjectPath(FName(*ExistingPackageName)).IsValid())
+			while (AssetRegistryModule.Get().GetAssetByObjectPath(
+				FSoftObjectPath(ExistingPackageName + TEXT(".") + FPaths::GetBaseFilename(ExistingPackageName))
+			).IsValid())
 			{
 				ExistingPackageName = AssetPath + TEXT("/") + BaseAssetName + FString::Printf(TEXT("_%d"), Suffix);
 				ExistingPackageName = FPackageName::ObjectPathToPackageName(ExistingPackageName);
@@ -302,7 +303,14 @@ void SDataAssetManagerWidget::SaveDataAsset()
 	UPackage* const AssetPackage = DataAsset->GetOutermost();
 
 	const FString PackageFileName = FPackageName::LongPackageNameToFilename(AssetPackage->GetName(), FPackageName::GetAssetPackageExtension());
-	if (UPackage::SavePackage(AssetPackage, DataAsset, EObjectFlags::RF_NoFlags, *PackageFileName))
+
+	FSavePackageArgs SaveArgs;
+	SaveArgs.TopLevelFlags = EObjectFlags::RF_NoFlags;
+	SaveArgs.Error = GError;
+	SaveArgs.SaveFlags = SAVE_NoError;
+	SaveArgs.bWarnOfLongFilename = false;
+
+	if (UPackage::SavePackage(AssetPackage, DataAsset, *PackageFileName, SaveArgs))
 	{
 		UE_LOG(SDataAssetManagerWidgetLog, Log, TEXT("DataAsset saved successfully: %s"), *PackageFileName);
 	}
@@ -898,11 +906,11 @@ SDataAssetManagerWidget::~SDataAssetManagerWidget()
 	{
 		const auto SafeRemove = [&](FDelegateHandle& Handle, auto&& Event)
 		{
-		    if (Handle.IsValid())
-		    {
-		        Event.Remove(Handle);
-		        Handle.Reset();
-		    }
+			if (Handle.IsValid())
+			{
+				Event.Remove(Handle);
+				Handle.Reset();
+			}
 		};
 
 		SafeRemove(AssetAddedDelegateHandle, AssetRegistryModule->Get().OnAssetAdded());

@@ -7,7 +7,6 @@
 #include "DeveloperSettings/DataAssetManagerSettings.h"
 #include "DetailWidgetRow.h"
 #include "DataAssetManager.h"
-#include "EditorValidatorSubsystem.h"
 
 TSharedRef<IDetailCustomization> SDeveloperSettingsWidget::MakeInstance()
 {

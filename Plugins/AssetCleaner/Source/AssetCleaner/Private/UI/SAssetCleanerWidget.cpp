@@ -28,6 +28,7 @@
 #include "MaterialStatsCommon.h"
 #include "MaterialEditingLibrary.h"
 #include "SMetaDataView.h"
+#include "UObject/SavePackage.h"
 
 DEFINE_LOG_CATEGORY_STATIC(SAssetCleanerWidgetLog, All, All)
 DEFINE_LOG_CATEGORY_STATIC(SAssetCleanerTableRowLog, All, All)
@@ -2149,7 +2150,13 @@ void SAssetCleanerWidget::SaveAsset()
 		FPackageName::GetAssetPackageExtension()
 	);
 
-	if (UPackage::SavePackage(AssetPackage, AssetObject, EObjectFlags::RF_NoFlags, *PackageFileName))
+	FSavePackageArgs SaveArgs;
+	SaveArgs.TopLevelFlags = EObjectFlags::RF_NoFlags;
+	SaveArgs.Error = GError;
+	SaveArgs.SaveFlags = SAVE_NoError;
+	SaveArgs.bWarnOfLongFilename = false;
+
+	if (UPackage::SavePackage(AssetPackage, AssetObject, *PackageFileName, SaveArgs))
 	{
 		UE_LOG(LogTemp, Log, TEXT("Asset saved successfully: %s"), *PackageFileName);
 	}
