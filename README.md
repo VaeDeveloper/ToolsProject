@@ -17,6 +17,8 @@ GitHub: [https://github.com/VaeDeveloper/ToolsProject](https://github.com/VaeDev
 | **DataAssetManager**     | Manages DataAssets with batch operations, editing, and organization tools.               |
 | **ValidatorX**          | Runs automated validation rules to detect issues like missing references, unused variables, or wrong settings. |
 | **ConsoleCommandCenter** | Centralized interface to execute, manage, and organize console commands within the editor. |
+| **UNotepad** | Classic notepad in Unreal. |
+
 
 ## 🏛️ ToolsProjectEditor Module
 
