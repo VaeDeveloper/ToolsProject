@@ -38,6 +38,8 @@ public class UNotepad : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"UnrealEd",
+				"ToolMenus",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

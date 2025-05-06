@@ -4,16 +4,57 @@
 
 #define LOCTEXT_NAMESPACE "FUNotepadModule"
 
+
+namespace UNotepad
+{
+	namespace ModuleName
+	{
+		const FName ToolProjectEditor(TEXT("ToolProjectEditor"));
+	}
+}
+
+const FName FUNotepadModule::UNotepadTabName = FName("UNotepad");
+
+
+
+
+
 void FUNotepadModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
+		UNotepadTabName,
+		FOnSpawnTab::CreateRaw(this, &FUNotepadModule::CreateNotepadManagerTab))
+		.SetDisplayName(LOCTEXT("FDataAssetManagerModule", "Data Asset Manager"))
+		.SetMenuType(GetVisibleModule());
 }
 
 void FUNotepadModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
+
 }
+
+void FUNotepadModule::OpenManagerTab()
+{
+	FGlobalTabmanager::Get()->TryInvokeTab(UNotepadTabName);
+}
+
+TSharedRef<SDockTab> FUNotepadModule::CreateNotepadManagerTab(const FSpawnTabArgs& Args)
+{
+	TSharedRef<SDockTab> UNotepadTab = SNew(SDockTab).TabRole(ETabRole::NomadTab);
+
+	return UNotepadTab;
+}
+
+ETabSpawnerMenuType::Type FUNotepadModule::GetVisibleModule() const
+{
+	if(FModuleManager::Get().IsModuleLoaded(UNotepad::ModuleName::ToolProjectEditor))
+	{
+		return ETabSpawnerMenuType::Enabled;
+	}
+	return ETabSpawnerMenuType::Hidden;
+}
+
+
 
 #undef LOCTEXT_NAMESPACE
 	
