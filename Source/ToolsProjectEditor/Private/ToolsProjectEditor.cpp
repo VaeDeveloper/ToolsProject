@@ -7,6 +7,40 @@ DEFINE_LOG_CATEGORY(ToolsProjectEditor);
 
 #define LOCTEXT_NAMESPACE "FToolsProjectEditor"
 
+namespace ToolsProject
+{
+	template <typename Module>
+	concept HasOpenManagerTab = requires(Module module) {
+		module.OpenManagerTab();
+	};
+
+	/**
+	 * Opens the manager tab for the specified module type.
+	 *
+	 * This template function retrieves the module pointer by name and calls its OpenManagerTab() method,
+	 * if the module is currently loaded and available.
+	 *
+	 * @tparam ModuleType The type of the module interface.
+	 * @param ModuleName The name of the module as registered in FModuleManager.
+	 */
+	template <typename ModuleType>
+	void OpenModuleManagerTab(const FName& ModuleName)
+	{
+		if constexpr(HasOpenManagerTab<ModuleType>)
+		{
+			if(ModuleType* Module = FModuleManager::GetModulePtr<ModuleType>(ModuleName))
+			{
+				Module->OpenManagerTab();
+			}
+		}
+		else
+		{
+			UE_LOG(ToolsProjectEditor, Warning, TEXT("Module %s does not have OpenManagerTab()"), *ModuleName.ToString());
+		}
+	}
+}
+
+
 void FToolsProjectEditor::StartupModule()
 {
 	UE_LOG(ToolsProjectEditor, Warning, TEXT("ToolsProjectEditor module has been loaded"));
@@ -25,59 +59,150 @@ void FToolsProjectEditor::ShutdownModule()
 
 void FToolsProjectEditor::MakeCustomMenu(FMenuBarBuilder& MenuBuilder)
 {
-	MenuBuilder.AddPullDownMenu(FText::FromString("CustomTools"),
-		FText::FromString("Open the Custom menu"),
-		FNewMenuDelegate::CreateRaw(this, &FToolsProjectEditor::FillCustomMenu), "CustomTools", FName(TEXT("CustomMenu")));
+// Adds an invisible menu item to create spacing between other menu entries.
+// This item is non-interactive and cannot be selected. It is used purely for visual separation.
+////////////////////////////////////////////////////////////////////////////////////////////////
+	MenuBuilder.AddMenuEntry(
+		FText::FromString(TEXT("             ")),  
+		FText::FromString(TEXT("Invisible menu item")),
+		FSlateIcon(), 
+		FUIAction(FExecuteAction::CreateLambda([] () {}), FCanExecuteAction::CreateLambda([] () { return false; })));
+////////////////////////////////////////////////////////////////////////////////////////////////
 
+    MenuBuilder.AddPullDownMenu(
+        LOCTEXT("ProjectManagementMenu", "Project Management"),
+        LOCTEXT("ProjectManagementMenu_Tooltip", "Open the Project Management menu"),
+        FNewMenuDelegate::CreateRaw(this, &FToolsProjectEditor::FillManagementMenu),
+        "ProjectManagement", FName(TEXT("ProjectManagement")));
+
+    MenuBuilder.AddPullDownMenu(
+        LOCTEXT("ValidationMenu", "Validation"),
+        LOCTEXT("ValidationMenu_Tooltip", "Open the Validation menu"),
+        FNewMenuDelegate::CreateRaw(this, &FToolsProjectEditor::FillValidationMenu),
+        "ValidationTools", FName(TEXT("ValidationTools")));
+
+    MenuBuilder.AddPullDownMenu(
+        LOCTEXT("NotepadMenu", "Notepad"),
+        LOCTEXT("NotepadMenu_Tooltip", "Open the Notepad menu"),
+        FNewMenuDelegate::CreateRaw(this, &FToolsProjectEditor::FillNotepadMenu),
+        "NotepadTools", FName(TEXT("NotepadTools")));
+
+// Adds an invisible menu item to create spacing between other menu entries.
+// This item is non-interactive and cannot be selected. It is used purely for visual separation.
+////////////////////////////////////////////////////////////////////////////////////////////////
+    MenuBuilder.AddMenuEntry(
+        FText::FromString(TEXT("                   ")),
+        FText::FromString(TEXT("Invisible menu item")),
+        FSlateIcon(),
+        FUIAction(FExecuteAction::CreateLambda([] () {}), FCanExecuteAction::CreateLambda([] () { return false; })));
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    MenuBuilder.AddVerifiedEditableText(
+        LOCTEXT("UniversalInput", "Universal Input"),
+        LOCTEXT("UniversalInputTooltip", "Search assets, run editor commands, or save notes.\n"
+                                      "Examples:\n"
+                                      "Х ChairMesh -> search asset\n"
+                                      "Х cmd:SaveAll -> run editor command\n"
+                                      "Х todo:Fix LODs -> save note"),
+        FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Search"),
+        TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateLambda([] { return FText::FromString("Initial Text"); })),
+        FOnVerifyTextChanged::CreateLambda([] (const FText& NewText, FText& OutError) {
+            if(NewText.ToString().Len() < 3)
+            {
+                OutError = FText::FromString("Text too short!");
+                return false;
+            }
+            return true;
+            }),
+        FOnTextCommitted::CreateRaw(this, &FToolsProjectEditor::OnUniversalInputCommitted));
 }
 
-void FToolsProjectEditor::FillCustomMenu(FMenuBuilder& MenuBuilder)
+void FToolsProjectEditor::FillManagementMenu(FMenuBuilder& MenuBuilder)
 {
-	MenuBuilder.BeginSection("Custom Plugin", FText::FromString("Custom Plugin and Tools Section"));
-	MenuBuilder.AddMenuEntry(
-		FText::FromString("Asset Cleaner Plugin "),
-		FText::FromString("Open Asset Cleaner Plugin "),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
-		FUIAction(FExecuteAction::CreateLambda([] {})));
+    MenuBuilder.BeginSection("Custom Plugin", LOCTEXT("CustomPluginSection", "Custom Plugin and Tools Section"));
 
-	MenuBuilder.AddMenuEntry(
-		LOCTEXT("DataAssetManager", "Data Asset Manager Plugin "),
-		LOCTEXT("DataAssetManagerTooltip", "Open Data Asset Manager Plugin "),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
-		FUIAction(FExecuteAction::CreateLambda([] ()
-			{
-				if(IDataAssetManagerModule* Module = FModuleManager::GetModulePtr<IDataAssetManagerModule>("DataAssetManager"))
-				{
-					Module->OpenDataAssetManagerTab();
-				}
-			})));
+    MenuBuilder.AddMenuEntry(
+        LOCTEXT("AssetCleanerPlugin", "Asset Cleaner Plugin"),
+        LOCTEXT("AssetCleanerPlugin_Tooltip", "Open Asset Cleaner Plugin"),
+        FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
+        FUIAction(FExecuteAction::CreateLambda([] {})));
 
-	MenuBuilder.AddMenuEntry(
-		FText::FromString("Blueprint Scanner Plugin"),
-		FText::FromString("Open Blueprint Scanner Plugin "),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
-		FUIAction(FExecuteAction::CreateLambda([]{})));
+    MenuBuilder.AddMenuEntry(
+        LOCTEXT("DataAssetManager", "Data Asset Manager Plugin"),
+        LOCTEXT("DataAssetManagerTooltip", "Open Data Asset Manager Plugin"),
+        FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetTreeFolderOpen"),
+        FUIAction(FExecuteAction::CreateLambda([] () { ToolsProject::OpenModuleManagerTab<IDataAssetManagerModule>("DataAssetManager"); })));
 
-	MenuBuilder.AddMenuEntry(
-		FText::FromString("UNotepad Plugin "),
-		FText::FromString("Open UNotepad Plugin "),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
-		FUIAction(FExecuteAction::CreateLambda([] {})));
-
-	MenuBuilder.AddMenuEntry(
-		FText::FromString("ValidatorX "),
-		FText::FromString("Open ValidatorX Plugin "),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
-		FUIAction(FExecuteAction::CreateLambda([] 
-			{
-				if (IValidatorXModule* Module = FModuleManager::GetModulePtr< IValidatorXModule>("ValidatorX"))
-				{
-					Module->OpenValidatorXTab();
-				}
-			})));
-
-	MenuBuilder.EndSection();
+    MenuBuilder.EndSection();
 }
+
+void FToolsProjectEditor::FillValidationMenu(FMenuBuilder& MenuBuilder)
+{
+    MenuBuilder.BeginSection("ValidationTools", LOCTEXT("ValidationToolsSection", "Tools for data validation"));
+
+    MenuBuilder.AddMenuEntry(
+        LOCTEXT("ValidatorXPlugin", "ValidatorX"),
+        LOCTEXT("ValidatorXPlugin_Tooltip", "Open ValidatorX Plugin"),
+        FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"),
+        FUIAction(FExecuteAction::CreateLambda([] () { ToolsProject::OpenModuleManagerTab<IValidatorXModule>("ValidatorX"); })));
+
+    MenuBuilder.AddMenuEntry(
+        LOCTEXT("BlueprintScannerPlugin", "Blueprint Scanner Plugin"),
+        LOCTEXT("BlueprintScannerPlugin_Tooltip", "Open Blueprint Tabs.Recompile"),
+        FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"),
+        FUIAction(FExecuteAction::CreateLambda([] {})));
+
+    MenuBuilder.EndSection();
+}
+
+void FToolsProjectEditor::FillNotepadMenu(FMenuBuilder& MenuBuilder)
+{
+    MenuBuilder.BeginSection("NotepadTools", LOCTEXT("NotepadToolsSection", "Tools for taking notes"));
+
+    MenuBuilder.AddMenuEntry(
+        LOCTEXT("UNotepadPlugin", "UNotepad Plugin"),
+        LOCTEXT("UNotepadPlugin_Tooltip", "Open UNotepad Plugin"),
+        FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"),
+        FUIAction(FExecuteAction::CreateLambda([] {})));
+
+    MenuBuilder.EndSection();
+}
+
+void FToolsProjectEditor::OnUniversalInputCommitted(const FText& Text, ETextCommit::Type CommitType)
+{
+    FString Input = Text.ToString().TrimStartAndEnd();
+
+    if(Input.StartsWith(TEXT("cmd:")))
+    {
+        FString Command = Input.Mid(4).TrimStartAndEnd();
+        GEditor->Exec(GEditor->GetWorld(), *Command);
+        UE_LOG(LogTemp, Log, TEXT("Executed Editor Command: %s"), *Command);
+    }
+    else if(Input.StartsWith(TEXT("todo:")))
+    {
+        FString Note = Input.Mid(5).TrimStartAndEnd();
+        SaveTodoNote(Note);
+        UE_LOG(LogTemp, Log, TEXT("Saved TODO note: %s"), *Note);
+    }
+    else
+    {
+        SearchAssets(Input);
+    }
+}
+
+void FToolsProjectEditor::SaveTodoNote(const FString& Note)
+{
+    // «десь можно добавить сохранение в .ini, файл, или EditorPerProjectUserSettings
+    UE_LOG(LogTemp, Log, TEXT("[TODO] %s"), *Note);
+}
+
+void FToolsProjectEditor::SearchAssets(const FString& Query)
+{
+    // «десь можно подключить AssetRegistry или ContentBrowserUtils
+    UE_LOG(LogTemp, Log, TEXT("[Asset Search] Searching for: %s"), *Query);
+}
+
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FToolsProjectEditor, ToolsProjectEditor)

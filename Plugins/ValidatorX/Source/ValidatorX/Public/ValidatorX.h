@@ -11,7 +11,7 @@ class UBlueprintValidatorBase;
 class IValidatorXModule : public IModuleInterface
 {
 public:
-	virtual void OpenValidatorXTab() = 0;
+	virtual void OpenManagerTab() = 0;
 };
 
 class FValidatorXModule : public IValidatorXModule
@@ -28,7 +28,7 @@ protected:
 
 	TSharedRef<SDockTab> OnSpawnValidatorXTab(const FSpawnTabArgs& Args);
 
-	virtual void OpenValidatorXTab() override;
+	virtual void OpenManagerTab() override;
 
 	/** Validators */
 	TArray <TSharedPtr<UBlueprintValidatorBase>> Validators;

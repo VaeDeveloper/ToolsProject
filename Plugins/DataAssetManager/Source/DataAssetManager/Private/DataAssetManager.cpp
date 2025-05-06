@@ -103,7 +103,7 @@ void FDataAssetManagerModule::RestartWidget()
 	}
 }
 
-void FDataAssetManagerModule::OpenDataAssetManagerTab() 
+void FDataAssetManagerModule::OpenManagerTab()
 {
     FGlobalTabmanager::Get()->TryInvokeTab(DataAssetManagerTabName);
 }

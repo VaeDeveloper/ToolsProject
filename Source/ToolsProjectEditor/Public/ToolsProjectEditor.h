@@ -29,8 +29,12 @@ private:
 	 *
 	 * @param MenuBuilder Reference to the FMenuBuilder used to build the menu.
 	 */
-	void FillCustomMenu(FMenuBuilder& MenuBuilder);
-
+	void FillManagementMenu(FMenuBuilder& MenuBuilder);
+	void FillValidationMenu(FMenuBuilder& MenuBuilder);
+	void FillNotepadMenu(FMenuBuilder& MenuBuilder);
+	void OnUniversalInputCommitted(const FText& Text, ETextCommit::Type CommitType);
+	void SaveTodoNote(const FString& Note);
+	void SearchAssets(const FString& Query);
 	/**
 	 * A shared pointer to an extensibility manager for the Level Editor
 	 * menu.

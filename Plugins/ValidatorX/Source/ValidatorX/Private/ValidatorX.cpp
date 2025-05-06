@@ -78,7 +78,7 @@ TSharedRef<SDockTab> FValidatorXModule::OnSpawnValidatorXTab(const FSpawnTabArgs
 		];
 }
 
-void FValidatorXModule::OpenValidatorXTab()
+void FValidatorXModule::OpenManagerTab()
 {
 	FGlobalTabmanager::Get()->TryInvokeTab(ValidatorXTabName);
 }

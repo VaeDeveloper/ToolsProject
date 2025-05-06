@@ -19,7 +19,7 @@ void FConsoleCommandCenterModule::StartupModule()
     NormalBrush->TintColor = FLinearColor(0.495466, 0.495466, 0.495466, 1.0f);
     NormalBrush->DrawAs = ESlateBrushDrawType::RoundedBox;
     NormalBrush->OutlineSettings.RoundingType = ESlateBrushRoundingType::FixedRadius;
-    NormalBrush->OutlineSettings.CornerRadii = FVector4(4.0f);
+    NormalBrush->OutlineSettings.CornerRadii = FVector4(4.0f, 4.0f, 4.0f, 4.0f);
     
   
     FSlateBrush* HoveredBrush = new FSlateBrush();

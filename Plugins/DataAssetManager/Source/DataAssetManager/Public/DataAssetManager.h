@@ -23,7 +23,7 @@ public:
    * Opens or brings focus to the Data Asset Manager tab
    * @note Pure virtual function must be implemented by derived class
    */
-  virtual void OpenDataAssetManagerTab() = 0;
+  virtual void OpenManagerTab() = 0;
   virtual void RestartWidget() = 0;
 };
 
@@ -41,7 +41,7 @@ public:
 	 * Opens or activates the Data Asset Manager tab
 	 * @override IDataAssetManagerModule implementation
 	 */
-	virtual void OpenDataAssetManagerTab() override;
+	virtual void OpenManagerTab() override;
 
 	/**
 	 * Restarts/reinitializes the widget component
