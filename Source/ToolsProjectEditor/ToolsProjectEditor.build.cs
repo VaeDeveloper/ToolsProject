@@ -17,7 +17,9 @@ public class ToolsProjectEditor : ModuleRules
 			"SlateCore",
 			"Projects",
 			"DataAssetManager",
-			"ValidatorX"
+			"ValidatorX",
+			"UNotepad",
+			"AssetCleaner"
 		});
  
 		PublicIncludePaths.AddRange(new string[] {"ToolsProjectEditor/Public"});
