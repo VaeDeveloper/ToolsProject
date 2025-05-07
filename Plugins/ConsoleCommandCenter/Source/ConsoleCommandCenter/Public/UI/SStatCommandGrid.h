@@ -94,13 +94,16 @@ private:
 
         return Grid;
     }
-    void OnStatCheckboxChanged(ECheckBoxState NewState, FString Command) {
+    void OnStatCheckboxChanged(ECheckBoxState NewState, FString Command) 
+    {
         UWorld* World = nullptr;
 
 #if WITH_EDITOR
-        for(const FWorldContext& Context : GEngine->GetWorldContexts()) {
+        for(const FWorldContext& Context : GEngine->GetWorldContexts()) 
+        {
             if(Context.WorldType == EWorldType::PIE ||
-                Context.WorldType == EWorldType::Editor) {
+                Context.WorldType == EWorldType::Editor) 
+            {
                 World = Context.World();
                 break;
             }
@@ -109,7 +112,8 @@ private:
         World = GEngine->GetCurrentPlayWorld();
 #endif
 
-        if(!World) {
+        if(!World) 
+        {
             return;
         }
 

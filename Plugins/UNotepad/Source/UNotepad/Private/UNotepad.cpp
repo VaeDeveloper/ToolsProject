@@ -11,13 +11,11 @@ namespace UNotepad
 	{
 		const FName ToolProjectEditor(TEXT("ToolProjectEditor"));
 	}
+
+
 }
 
 const FName FUNotepadModule::UNotepadTabName = FName("UNotepad");
-
-
-
-
 
 void FUNotepadModule::StartupModule()
 {

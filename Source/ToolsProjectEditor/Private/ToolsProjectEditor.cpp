@@ -2,6 +2,8 @@
 #include "Editor/LevelEditor/Public/LevelEditor.h"
 #include "DataAssetManager.h"
 #include "ValidatorX.h"
+#include "UNotepad.h"
+#include "AssetCleaner.h"
 
 DEFINE_LOG_CATEGORY(ToolsProjectEditor);
 
@@ -9,34 +11,40 @@ DEFINE_LOG_CATEGORY(ToolsProjectEditor);
 
 namespace ToolsProject
 {
+    // Concept to ensure the module type provides OpenManagerTab().
 	template <typename Module>
-	concept HasOpenManagerTab = requires(Module module) {
-		module.OpenManagerTab();
-	};
+    // Ensures the module type implements OpenManagerTab().
+    concept HasOpenManagerTab = requires(Module module) {
+        module.OpenManagerTab();
+    };
 
-	/**
-	 * Opens the manager tab for the specified module type.
-	 *
-	 * This template function retrieves the module pointer by name and calls its OpenManagerTab() method,
-	 * if the module is currently loaded and available.
-	 *
-	 * @tparam ModuleType The type of the module interface.
-	 * @param ModuleName The name of the module as registered in FModuleManager.
-	 */
-	template <typename ModuleType>
-	void OpenModuleManagerTab(const FName& ModuleName)
-	{
-		if constexpr(HasOpenManagerTab<ModuleType>)
-		{
-			if(ModuleType* Module = FModuleManager::GetModulePtr<ModuleType>(ModuleName))
-			{
-				Module->OpenManagerTab();
-			}
-		}
-		else
-		{
-			UE_LOG(ToolsProjectEditor, Warning, TEXT("Module %s does not have OpenManagerTab()"), *ModuleName.ToString());
-		}
+    /**
+     * Utility template function that opens the manager tab of a specified module, if supported.
+     *
+     * This function checks at compile time if the module type provides an OpenManagerTab() method
+     * using the HasOpenManagerTab concept. If the method exists and the module is currently loaded,
+     * it invokes the OpenManagerTab() function on the module instance.
+     *
+     * Example usage:
+     * OpenModuleManagerTab<IDataAssetManagerModule>("DataAssetManager");
+     *
+     * @tparam ModuleType The type of the module interface, typically implementing IModuleInterface.
+     * @param ModuleName The registered name of the module, used to retrieve it from FModuleManager.
+     */
+    template <typename ModuleType>
+    void OpenModuleManagerTab(const FName& ModuleName)
+    {
+        if constexpr(HasOpenManagerTab<ModuleType>)
+        {
+            if(ModuleType* Module = FModuleManager::GetModulePtr<ModuleType>(ModuleName))
+            {
+            	Module->OpenManagerTab();
+            }
+        }
+        else
+        {
+            UE_LOG(ToolsProjectEditor, Warning, TEXT("Module %s does not have OpenManagerTab()"), *ModuleName.ToString());
+        }
 	}
 }
 
@@ -98,24 +106,24 @@ void FToolsProjectEditor::MakeCustomMenu(FMenuBarBuilder& MenuBuilder)
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    MenuBuilder.AddVerifiedEditableText(
-        LOCTEXT("UniversalInput", "Universal Input"),
-        LOCTEXT("UniversalInputTooltip", "Search assets, run editor commands, or save notes.\n"
-                                      "Examples:\n"
-                                      "• ChairMesh -> search asset\n"
-                                      "• cmd:SaveAll -> run editor command\n"
-                                      "• todo:Fix LODs -> save note"),
-        FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Search"),
-        TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateLambda([] { return FText::FromString("Initial Text"); })),
-        FOnVerifyTextChanged::CreateLambda([] (const FText& NewText, FText& OutError) {
-            if(NewText.ToString().Len() < 3)
-            {
-                OutError = FText::FromString("Text too short!");
-                return false;
-            }
-            return true;
-            }),
-        FOnTextCommitted::CreateRaw(this, &FToolsProjectEditor::OnUniversalInputCommitted));
+    //MenuBuilder.AddVerifiedEditableText(
+    //    LOCTEXT("UniversalInput", "Universal Input"),
+    //    LOCTEXT("UniversalInputTooltip", "Search assets, run editor commands, or save notes.\n"
+    //                                  "Examples:\n"
+    //                                  "• ChairMesh -> search asset\n"
+    //                                  "• cmd:SaveAll -> run editor command\n"
+    //                                  "• todo:Fix LODs -> save note"),
+    //    FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Search"),
+    //    TAttribute<FText>::Create(TAttribute<FText>::FGetter::CreateLambda([] { return FText::FromString("Initial Text"); })),
+    //    FOnVerifyTextChanged::CreateLambda([] (const FText& NewText, FText& OutError) {
+    //        if(NewText.ToString().Len() < 3)
+    //        {
+    //            OutError = FText::FromString("Text too short!");
+    //            return false;
+    //        }
+    //        return true;
+    //        }),
+    //    FOnTextCommitted::CreateRaw(this, &FToolsProjectEditor::OnUniversalInputCommitted));
 }
 
 void FToolsProjectEditor::FillManagementMenu(FMenuBuilder& MenuBuilder)
@@ -126,7 +134,7 @@ void FToolsProjectEditor::FillManagementMenu(FMenuBuilder& MenuBuilder)
         LOCTEXT("AssetCleanerPlugin", "Asset Cleaner Plugin"),
         LOCTEXT("AssetCleanerPlugin_Tooltip", "Open Asset Cleaner Plugin"),
         FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
-        FUIAction(FExecuteAction::CreateLambda([] {})));
+        FUIAction(FExecuteAction::CreateLambda([] { ToolsProject::OpenModuleManagerTab<IAssetCleaner>("AssetCleaner"); })));
 
     MenuBuilder.AddMenuEntry(
         LOCTEXT("DataAssetManager", "Data Asset Manager Plugin"),
@@ -164,7 +172,7 @@ void FToolsProjectEditor::FillNotepadMenu(FMenuBuilder& MenuBuilder)
         LOCTEXT("UNotepadPlugin", "UNotepad Plugin"),
         LOCTEXT("UNotepadPlugin_Tooltip", "Open UNotepad Plugin"),
         FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"),
-        FUIAction(FExecuteAction::CreateLambda([] {})));
+        FUIAction(FExecuteAction::CreateLambda([] { ToolsProject::OpenModuleManagerTab<IUNotepadModule>("UNotepad"); })));
 
     MenuBuilder.EndSection();
 }

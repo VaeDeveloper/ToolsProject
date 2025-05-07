@@ -34,11 +34,13 @@ namespace AssetCleaner
 
 }
 
+const FName FAssetCleanerModule::AssetCleanerTabName = FName("AssetCleaner");
+
 void FAssetCleanerModule::StartupModule()
 {
 	InitializeMenuExtention();
 
-	FGlobalTabmanager::Get()->RegisterNomadTabSpawner("AssetCleaner",
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(AssetCleanerTabName,
 	FOnSpawnTab::CreateRaw(this, &FAssetCleanerModule::CreateAssetCleanerTab))
 	.SetDisplayName(FText::FromString("Asset Cleaner"))
 	.SetMenuType(ETabSpawnerMenuType::Hidden);
@@ -50,8 +52,8 @@ TSharedRef<SDockTab> FAssetCleanerModule::CreateAssetCleanerTab(const FSpawnTabA
 		.Label(FText::FromString("Asset Cleaner"))
 		[
 			SNew(SAssetCleanerWidget)
-				.DiscoveredAssets(GetAllAssets(SelectedFolderPaths[0]))
-				.CurrentSelectedFolder(SelectedFolderPaths[0])
+			.DiscoveredAssets(GetAllAssets(SelectedFolderPaths[0]))
+			.CurrentSelectedFolder(SelectedFolderPaths[0])
 		];
 }
 
@@ -89,6 +91,20 @@ TSharedRef<SDockTab> FAssetCleanerModule::CreateAssetCleanerTab(const TArray<TSh
 void FAssetCleanerModule::ShutdownModule()
 {
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner("AssetCleaner");
+}
+
+void FAssetCleanerModule::OpenManagerTab()
+{
+	const TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(AssetCleaner::AssetCleanerModuleName);
+
+	if(ExistingTab.IsValid())
+	{
+		ExistingTab->ActivateInParent(ETabActivationCause::SetDirectly);
+		return;
+	}
+
+	const TSharedRef<SDockTab> NewTab = CreateAssetCleanerTab(GetAllAssets(AssetCleaner::ProjectDirectory), AssetCleaner::ProjectDirectory);
+	FGlobalTabmanager::Get()->InsertNewDocumentTab(AssetCleaner::AssetCleanerModuleName, FTabManager::ESearchPreference::PreferLiveTab, NewTab);
 }
 
 void FAssetCleanerModule::InitializeMenuExtention() 
@@ -165,28 +181,27 @@ TArray<TSharedPtr<FAssetData>> FAssetCleanerModule::GetAllAssets(const FString &
 
 void FAssetCleanerModule::CreateAssetCleanerMenu(FMenuBuilder & SubMenuBuilder)
 {
-		SubMenuBuilder.AddMenuEntry(FText::FromString("Open Folder Cleaner"), 
-								FText::FromString("Designed to optimize and manage folders and assets in a project"), 
-								FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Delete"),
-								FUIAction(FExecuteAction::CreateLambda(
-									[this]()
+	SubMenuBuilder.AddMenuEntry(FText::FromString("Open Folder Cleaner"), 
+							FText::FromString("Designed to optimize and manage folders and assets in a project"), 
+							FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Delete"),
+							FUIAction(FExecuteAction::CreateLambda(
+								[this]()
+								{
+									const TSharedPtr<SDockTab> ExistingTab = 
+									FGlobalTabmanager::Get()->FindExistingLiveTab(AssetCleaner::AssetCleanerModuleName);
+
+									if (ExistingTab.IsValid())
 									{
-										const TSharedPtr<SDockTab> ExistingTab = 
-										FGlobalTabmanager::Get()->FindExistingLiveTab(AssetCleaner::AssetCleanerModuleName);
-
-										if (ExistingTab.IsValid())
-										{
-											ExistingTab->ActivateInParent(ETabActivationCause::SetDirectly);
-											return;
-										}
-										
-										const TSharedRef<SDockTab> NewTab = 
-										CreateAssetCleanerTab(GetAllAssets(AssetCleaner::ProjectDirectory), AssetCleaner::ProjectDirectory);
-										FGlobalTabmanager::Get()->InsertNewDocumentTab(AssetCleaner::AssetCleanerModuleName, FTabManager::ESearchPreference::PreferLiveTab, NewTab);
+										ExistingTab->ActivateInParent(ETabActivationCause::SetDirectly);
+										return;
 									}
-								)));
+									
+									const TSharedRef<SDockTab> NewTab = 
+									CreateAssetCleanerTab(GetAllAssets(AssetCleaner::ProjectDirectory), AssetCleaner::ProjectDirectory);
+									FGlobalTabmanager::Get()->InsertNewDocumentTab(AssetCleaner::AssetCleanerModuleName, FTabManager::ESearchPreference::PreferLiveTab, NewTab);
+								}
+							)));
 }
-
 #undef LOCTEXT_NAMESPACE
 	
 IMPLEMENT_MODULE(FAssetCleanerModule, AssetCleaner)

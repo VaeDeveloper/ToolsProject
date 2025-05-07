@@ -5,13 +5,24 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 /* clang-format off */
-class FAssetCleanerModule : public IModuleInterface
+
+class IAssetCleaner : public IModuleInterface
+{
+public:
+	virtual void OpenManagerTab() = 0;
+};
+
+class FAssetCleanerModule : public IAssetCleaner
 {
 public:
 
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+	virtual void OpenManagerTab() override;
+
+	static const FName AssetCleanerTabName;
 
 private:
 	/**

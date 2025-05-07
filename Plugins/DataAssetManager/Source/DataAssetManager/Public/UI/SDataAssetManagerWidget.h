@@ -26,7 +26,6 @@ namespace DataAssetManager
 		constexpr const TCHAR* Settings			= TEXT("Settings");
 		constexpr const TCHAR* DataAssetManager = TEXT("DataAssetManager");
 		constexpr const TCHAR* PropertyEditor	= TEXT("PropertyEditor");
-
 	}
 	
 	namespace Private
