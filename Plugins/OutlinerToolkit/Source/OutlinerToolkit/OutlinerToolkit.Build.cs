@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class UNotepad : ModuleRules
+public class OutlinerToolkit : ModuleRules
 {
-	public UNotepad(ReadOnlyTargetRules Target) : base(Target)
+	public OutlinerToolkit(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
@@ -26,7 +26,8 @@ public class UNotepad : ModuleRules
 			new string[]
 			{
 				"Core",
-				// ... add other public dependencies that you statically link with here ...
+				"CoreUObject",
+				"InputCore"
 			}
 			);
 			
@@ -34,14 +35,15 @@ public class UNotepad : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"CoreUObject",
-				"Engine",
+				"EditorStyle",
+				"LevelEditor",
+				"UnrealEd",
+				"SceneOutliner",
 				"Slate",
 				"SlateCore",
-				"UnrealEd",
+				"Projects",
 				"ToolMenus",
-				"InputCore"
-				// ... add private dependencies that you statically link with here ...	
+				"TypedElementFramework"
 			}
 			);
 		

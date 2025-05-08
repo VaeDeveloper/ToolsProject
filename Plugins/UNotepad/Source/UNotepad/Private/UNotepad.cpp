@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UNotepad.h"
+#include "UI/SNotepadWidget.h"
 
 #define LOCTEXT_NAMESPACE "FUNotepadModule"
 
@@ -11,8 +12,6 @@ namespace UNotepad
 	{
 		const FName ToolProjectEditor(TEXT("ToolProjectEditor"));
 	}
-
-
 }
 
 const FName FUNotepadModule::UNotepadTabName = FName("UNotepad");
@@ -38,8 +37,19 @@ void FUNotepadModule::OpenManagerTab()
 
 TSharedRef<SDockTab> FUNotepadModule::CreateNotepadManagerTab(const FSpawnTabArgs& Args)
 {
-	TSharedRef<SDockTab> UNotepadTab = SNew(SDockTab).TabRole(ETabRole::NomadTab);
+	TSharedRef<SDockTab> UNotepadTab =
+	SNew(SDockTab)
+		.TabRole(ETabRole::NomadTab)
+		.Label(FText::FromString("UNotepad"))
+		[
+			SNew(SBox)
+				.WidthOverride(800.0f)
+				.HeightOverride(600.0f)
+				[
+					SNew(SNotepadWidget)
+				]
 
+		];
 	return UNotepadTab;
 }
 
