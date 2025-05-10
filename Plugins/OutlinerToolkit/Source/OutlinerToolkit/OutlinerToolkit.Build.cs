@@ -20,30 +20,41 @@ public class OutlinerToolkit : ModuleRules
 				// ... add other private include paths required here ...
 			}
 			);
-			
-		
+
+
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"Core",
 				"CoreUObject",
-				"InputCore"
+				"Engine",
+				"InputCore",
+				"UnrealEd",
+				"EditorSubsystem",
+				"LevelEditor",
+				"Slate",
+				"SlateCore",
+				"ToolMenus",
+				"UMG",            
+				"EditorStyle"    
 			}
-			);
-			
-		
+		);
+
+
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"EditorStyle",
 				"LevelEditor",
-				"UnrealEd",
 				"SceneOutliner",
 				"Slate",
 				"SlateCore",
 				"Projects",
 				"ToolMenus",
-				"TypedElementFramework"
+				"AssetTools",
+				"Kismet",
+				"BlueprintGraph",
+				"EditorFramework",
 			}
 			);
 		

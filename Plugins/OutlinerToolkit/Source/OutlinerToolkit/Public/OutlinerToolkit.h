@@ -14,6 +14,6 @@ public:
 	virtual void ShutdownModule() override;
 
 	void RegisterMenus();
-	void EntryFunctionWithContext(const FToolMenuContext& MenuContext);
+	void EntryFunctionWithContext();
 
 };
