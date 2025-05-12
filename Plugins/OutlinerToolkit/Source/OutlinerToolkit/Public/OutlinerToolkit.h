@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+class ISceneOutlinerColumn;
+class ISceneOutliner;
+
 class FOutlinerToolkitModule : public IModuleInterface
 {
 public:
@@ -15,5 +18,9 @@ public:
 
 	void RegisterMenus();
 	void EntryFunctionWithContext();
+
+private:
+	void InitCustomSceneOutlinerColumn();
+	TSharedRef<ISceneOutlinerColumn> OnCreateGroupId(ISceneOutliner& SceneOutliner);
 
 };

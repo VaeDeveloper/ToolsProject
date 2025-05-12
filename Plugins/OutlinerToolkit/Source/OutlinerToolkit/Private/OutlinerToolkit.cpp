@@ -15,51 +15,15 @@
 #include "Components/SceneComponent.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/SimpleConstructionScript.h"
+#include "SceneOutlinerModule.h"
+#include "Columns/OutlinerRTGroupIDColumn.h"
+
 #define LOCTEXT_NAMESPACE "FOutlinerToolkitModule"
 
 void FOutlinerToolkitModule::StartupModule()
 {
-    FCoreUObjectDelegates::OnObjectPropertyChanged.AddLambda([this] (UObject* Object, FPropertyChangedEvent& Event)
-        {
-            const FName PropertyName = Event.GetPropertyName();
-            UE_LOG(LogTemp, Warning, TEXT("[OnPropertyChanged] Object: %s | Property: %s"),
-                *GetNameSafe(Object), *PropertyName.ToString());
-
-            //if(AActor* Actor = Cast<AActor>(Object))
-            //{
-            //
-            //    UClass* ActorClass = Actor->GetClass();
-            //    FProperty* Property = ActorClass->FindPropertyByName(TEXT("RayTracingGroupId"));
-            //
-            //    if(Property)
-            //    {
-            //        if(FIntProperty* IntProperty = CastField<FIntProperty>(Property))
-            //        {
-            //            int32 RayTracingGroupIdValue = 0;
-            //            IntProperty->GetValue_InContainer(Actor, &RayTracingGroupIdValue);
-            //
-            //            UE_LOG(LogTemp, Warning, TEXT("Detected RayTracingGroupId change on Actor: %s, New Value: %d"),
-            //                *Actor->GetName(), RayTracingGroupIdValue);
-            //            RefreshSceneOutliner();
-            //        }
-            //    }
-            //}
-
-
-            if(UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Object))
-            {
-                if(PropertyName == GET_MEMBER_NAME_CHECKED(UPrimitiveComponent, RayTracingGroupId))
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("Detected RayTracingGroupId change on PrimitiveComponent: %s (Owner: %s)"),
-                        *PrimComp->GetName(), *GetNameSafe(PrimComp->GetOwner()));
-                    // Refresh Outliner
-                    return;
-                }
-            }
-        });
-
-	UToolMenus::RegisterStartupCallback(
-		FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FOutlinerToolkitModule::RegisterMenus));
+	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FOutlinerToolkitModule::RegisterMenus));
+    InitCustomSceneOutlinerColumn();
 }
 
 void FOutlinerToolkitModule::RegisterMenus()
@@ -127,6 +91,23 @@ void FOutlinerToolkitModule::EntryFunctionWithContext()
     UE_LOG(LogTemp, Log, TEXT("Blueprint '%s' created successfully."), *AssetName);
 
 }
+
+void FOutlinerToolkitModule::InitCustomSceneOutlinerColumn()
+{
+    FSceneOutlinerModule& SceneOutlinerModule = FModuleManager::LoadModuleChecked<FSceneOutlinerModule>("SceneOutliner");
+
+    FSceneOutlinerColumnInfo RayTracingGroupIdColumnInfo(ESceneOutlinerColumnVisibility::Visible,
+        1,
+        FCreateSceneOutlinerColumn::CreateRaw(this, &FOutlinerToolkitModule::OnCreateGroupId));
+
+    SceneOutlinerModule.RegisterDefaultColumnType<FOutlinerRTGroupIDColumn>(RayTracingGroupIdColumnInfo);
+}
+
+TSharedRef<ISceneOutlinerColumn> FOutlinerToolkitModule::OnCreateGroupId(ISceneOutliner& SceneOutliner)
+{
+    return MakeShareable(new FOutlinerRTGroupIDColumn(SceneOutliner));
+}
+
 
 void FOutlinerToolkitModule::ShutdownModule()
 {

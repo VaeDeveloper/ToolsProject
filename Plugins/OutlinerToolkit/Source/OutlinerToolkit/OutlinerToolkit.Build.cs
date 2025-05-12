@@ -55,6 +55,7 @@ public class OutlinerToolkit : ModuleRules
 				"Kismet",
 				"BlueprintGraph",
 				"EditorFramework",
+				"SceneOutliner"
 			}
 			);
 		
