@@ -6,6 +6,7 @@
 #include "ComponentTreeItem.h"
 #include "ActorTreeItem.h"
 #include "SceneOutliner.h"
+#include "Engine/StaticMeshActor.h"
 
 FOutlinerRTGroupIDColumn::FOutlinerRTGroupIDColumn(ISceneOutliner& SceneOutliner)
 {
@@ -72,7 +73,10 @@ FString FOutlinerRTGroupIDColumn::GetRayTracingGroupIdString(FSceneOutlinerTreeI
 		{
 			if(AActor* Actor = ActorItem->Actor.Get())
 			{
-				return FString::FromInt(Actor->GetRayTracingGroupId());
+				if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(Actor))
+				{
+					return FString::FromInt(StaticMeshActor->GetRayTracingGroupId());
+				}
 			}
 		}
 		else if(FComponentTreeItem* ComponentItem = TreeItem->CastTo<FComponentTreeItem>())
