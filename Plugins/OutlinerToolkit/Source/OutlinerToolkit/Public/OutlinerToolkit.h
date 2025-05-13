@@ -22,5 +22,6 @@ public:
 private:
 	void InitCustomSceneOutlinerColumn();
 	TSharedRef<ISceneOutlinerColumn> OnCreateGroupId(ISceneOutliner& SceneOutliner);
+	TSharedRef<ISceneOutlinerColumn> OnCreateSimulatePhysics(ISceneOutliner& SceneOutliner);
 
 };
