@@ -5,6 +5,7 @@
 #include "ComponentTreeItem.h"
 #include "ActorTreeItem.h"
 #include "SceneOutliner.h"
+#include "Engine/StaticMeshActor.h"
 
 FOutlinerSimulatePhysicsColumn::FOutlinerSimulatePhysicsColumn(ISceneOutliner& SceneOutliner)
 {
@@ -14,7 +15,7 @@ FOutlinerSimulatePhysicsColumn::FOutlinerSimulatePhysicsColumn(ISceneOutliner& S
 SHeaderRow::FColumn::FArguments FOutlinerSimulatePhysicsColumn::ConstructHeaderRowColumn()
 {
 	return SHeaderRow::Column(GetColumnID())
-		//.FixedWidth(50.0f)
+		.FixedWidth(50.0f)
 		.HAlignHeader(HAlign_Center)
 		.HAlignCell(HAlign_Center)
 		.VAlignCell(VAlign_Center)
@@ -30,47 +31,71 @@ SHeaderRow::FColumn::FArguments FOutlinerSimulatePhysicsColumn::ConstructHeaderR
 
 const TSharedRef<SWidget> FOutlinerSimulatePhysicsColumn::ConstructRowWidget(FSceneOutlinerTreeItemRef TreeItem, const STableRow<FSceneOutlinerTreeItemPtr>& Row)
 {
-	//FActorTreeItem* ActorTreeItem = TreeItem->CastTo<FActorTreeItem>();
-	//if(!ActorTreeItem || !ActorTreeItem->IsValid())
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Invalid ActorTreeItem"));
-	//	return SNullWidget::NullWidget;
-	//}
+	const FActorTreeItem* ActorTreeItem = TreeItem->CastTo<FActorTreeItem>();
+	if(!ActorTreeItem || !ActorTreeItem->IsValid())
+	{
+		return SNullWidget::NullWidget;
+	}
 
-	//AActor* Actor = ActorTreeItem->Actor.Get();
-	//if(!Actor)
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Actor is null"));
-	//	return SNullWidget::NullWidget;
-	//}
+	const AActor* Actor = ActorTreeItem->Actor.Get();
+	if(!Actor)
+	{
+		return SNullWidget::NullWidget;
+	}
 
-	//UPrimitiveComponent* Primitive = Actor->FindComponentByClass<UPrimitiveComponent>();
-	//if(!Primitive)
-	//{
-	//	return SNullWidget::NullWidget;
-	//}
+	if(!Actor->IsA<AStaticMeshActor>())
+	{
+		return SNullWidget::NullWidget;
+	}
 
-	//TSharedRef<SCheckBox> CheckBox = SNew(SCheckBox)
-	//	.IsChecked_Lambda([Primitive] ()
-	//		{
-	//			return Primitive->IsSimulatingPhysics() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
-	//		})
-	//	.OnCheckStateChanged_Lambda([Primitive, this] (ECheckBoxState NewState)
-	//		{
-	//			if(!Primitive)
-	//			{
-	//				UE_LOG(LogTemp, Warning, TEXT("Primitive component is null in OnCheckStateChanged"));
-	//				return;
-	//			}
+	UPrimitiveComponent* Primitive = Actor->FindComponentByClass<UPrimitiveComponent>();
 
-	//			Primitive->Modify();
-	//			Primitive->SetSimulatePhysics(NewState == ECheckBoxState::Checked);
+	if(!Primitive)
+	{
+		return SNullWidget::NullWidget;
+	}
 
-	//			if(SceneOutliner)
-	//			{
-	//				SceneOutliner->FullRefresh();
-	//			}
-	//		});
+	if(const UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Primitive))
+	{
+		const UStaticMesh* Mesh = StaticMeshComp->GetStaticMesh();
+		if(Mesh && Mesh->GetName().Contains(TEXT("SM_SkySphere")))
+		{
+			return SNullWidget::NullWidget;
+		}
+	}
 
-	return SNullWidget::NullWidget;
+	TWeakObjectPtr<UPrimitiveComponent> WeakPrimitive = Primitive;
+
+	TSharedRef<SCheckBox> CheckBox = SNew(SCheckBox)
+		.IsChecked_Lambda([WeakPrimitive] ()
+			{
+				if(WeakPrimitive.IsValid())
+				{
+					return WeakPrimitive->IsSimulatingPhysics() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+				}
+				return ECheckBoxState::Unchecked;
+			})
+		.OnCheckStateChanged_Lambda([WeakPrimitive, this] (ECheckBoxState NewState)
+			{
+				if(!WeakPrimitive.IsValid())
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Primitive component is invalid in OnCheckStateChanged"));
+					return;
+				}
+
+				UPrimitiveComponent* Primitive = WeakPrimitive.Get();
+
+				Primitive->SetMobility(EComponentMobility::Movable);
+				Primitive->Modify();
+				Primitive->SetSimulatePhysics(NewState == ECheckBoxState::Checked);
+
+				if(SceneOutliner)
+				{
+					SceneOutliner->FullRefresh();
+				}
+			});
+
+	return CheckBox;
 }
+
+
