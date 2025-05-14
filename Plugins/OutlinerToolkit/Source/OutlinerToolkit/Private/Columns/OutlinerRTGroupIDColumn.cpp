@@ -7,6 +7,9 @@
 #include "ActorTreeItem.h"
 #include "SceneOutliner.h"
 #include "Engine/StaticMeshActor.h"
+#include "Components/TextRenderComponent.h"
+#include "Components/BrushComponent.h"
+#include "GameFramework/PlayerStart.h"
 
 FOutlinerRTGroupIDColumn::FOutlinerRTGroupIDColumn(ISceneOutliner& SceneOutliner)
 {
@@ -67,38 +70,34 @@ void FOutlinerRTGroupIDColumn::SortItems(TArray<FSceneOutlinerTreeItemPtr>& InOu
 
 FString FOutlinerRTGroupIDColumn::GetRayTracingGroupIdString(FSceneOutlinerTreeItemRef TreeItem) const
 {
-	if(TreeItem->IsValid())
+	if(!TreeItem->IsValid())
 	{
-		if(FActorTreeItem* ActorItem = TreeItem->CastTo<FActorTreeItem>())
+		return TEXT("");
+	}
+
+	if(FActorTreeItem* ActorItem = TreeItem->CastTo<FActorTreeItem>())
+	{
+		if(AActor* Actor = ActorItem->Actor.Get())
 		{
-			if(AActor* Actor = ActorItem->Actor.Get())
+
+			if(Actor->IsA<APlayerStart>())
 			{
-				if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(Actor))
-				{
-					return FString::FromInt(StaticMeshActor->GetRayTracingGroupId());
-				}
+				return TEXT("");
 			}
-		}
-		else if(FComponentTreeItem* ComponentItem = TreeItem->CastTo<FComponentTreeItem>())
-		{
-			if(UActorComponent* Component = ComponentItem->Component.Get())
+
+			USceneComponent* RootComp = Actor->GetRootComponent();
+
+			if(RootComp && !RootComp->IsA<UBrushComponent>() && !RootComp->IsA<UTextRenderComponent>())
 			{
-				if(UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Component))
+				if(UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(RootComp))
 				{
-					const int32 ComponentGroupId = PrimComp->RayTracingGroupId;
-					if(ComponentGroupId == FPrimitiveSceneProxy::InvalidRayTracingGroupId && PrimComp->GetOwner())
-					{
-						return FString::Printf(TEXT("%d (from actor)"), PrimComp->GetOwner()->GetRayTracingGroupId());
-					}
-					else
-					{
-						return FString::FromInt(ComponentGroupId);
-					}
+					return FString::FromInt(PrimComp->GetRayTracingGroupId());
 				}
 			}
 		}
 	}
-	return TEXT("-");
+
+	return TEXT("");
 }
 
 EColumnSortMode::Type FOutlinerRTGroupIDColumn::GetColumnSortMode() const
