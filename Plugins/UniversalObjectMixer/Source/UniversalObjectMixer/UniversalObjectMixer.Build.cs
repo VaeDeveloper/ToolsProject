@@ -26,7 +26,8 @@ public class UniversalObjectMixer : ModuleRules
 			new string[]
 			{
 				"Core",
-				// ... add other public dependencies that you statically link with here ...
+				"ObjectMixerEditor"
+				
 			}
 			);
 			
@@ -38,7 +39,6 @@ public class UniversalObjectMixer : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				// ... add private dependencies that you statically link with here ...	
 			}
 			);
 		
