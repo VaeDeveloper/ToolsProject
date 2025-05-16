@@ -8,7 +8,7 @@
 #include "PhysicsObjectFilter.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class UNIVERSALOBJECTMIXER_API UPhysicsObjectFilter : public UObjectMixerObjectFilter
@@ -29,7 +29,7 @@ public:
 	{
 		return
 		{
-			AStaticMeshActor::StaticClass()
+			AActor::StaticClass()
 		};
 	}
 
@@ -37,21 +37,16 @@ public:
 	{
 		return
 		{
-			"SimulatePhysics",
-			"MassInKg",
-			"LinearDamping",
-			"AngularDamping",
-			"Mobility",
-			"CollisionEnabled",
-			"CollisionProfileName",
-			"bGenerateOverlapEvents",
-			"bUseCCD"
+			FName("BodyInstance.bSimulatePhysics")
 		};
 	}
 
 	virtual TSet<FName> GetForceAddedColumns() const override
 	{
-		return {};
+		return
+		{
+			FName("BodyInstance.bSimulatePhysics")
+		};
 	}
 
 	virtual bool GetShowTransientObjects() const override
@@ -61,7 +56,7 @@ public:
 
 	virtual bool ShouldIncludeUnsupportedProperties() const override
 	{
-		return false;
+		return true;
 	}
 
 	virtual EObjectMixerInheritanceInclusionOptions GetObjectMixerPropertyInheritanceInclusionOptions() const override
@@ -73,5 +68,5 @@ public:
 	{
 		return EObjectMixerInheritanceInclusionOptions::IncludeAllChildren;
 	}
-	
+
 };
