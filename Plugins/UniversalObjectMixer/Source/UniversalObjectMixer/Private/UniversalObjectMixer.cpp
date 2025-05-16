@@ -1,18 +1,52 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UniversalObjectMixer.h"
+#include "Filters/RayTracingObjectFilter.h"
 
 #define LOCTEXT_NAMESPACE "FUniversalObjectMixerModule"
 
 void FUniversalObjectMixerModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FUniversalObjectMixerModule::Initialize);
+
 }
 
 void FUniversalObjectMixerModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
+	Teardown();
+}
+
+void FUniversalObjectMixerModule::Initialize()
+{
+	FObjectMixerEditorModule::Initialize();
+	// DefaultFilterClass = URayTracingObjectFilter::StaticClass();
+}
+
+FName FUniversalObjectMixerModule::GetModuleName() const
+{
+	return FName("UniversalObjectMixer");
+}
+
+void FUniversalObjectMixerModule::SetupMenuItemVariables()
+{
+	TabLabel = LOCTEXT("UniversalObjectMixerTabLabel", "Universal Object Mixer");
+
+	MenuItemName = LOCTEXT("UniversalObjectMixerEditorMenuItem", "Object Mixer");
+	MenuItemIcon = FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.GameSettings");
+	MenuItemTooltip = LOCTEXT("OpenUniversalObjectMixerEditorTooltip", "Open Universal Object Mixer");
+}
+
+FName FUniversalObjectMixerModule::GetTabSpawnerId()
+{
+	return FName("UniversalObjectMixer");
+}
+
+void FUniversalObjectMixerModule::RegisterSettings() const
+{
+}
+
+void FUniversalObjectMixerModule::UnregisterSettings() const
+{
 }
 
 #undef LOCTEXT_NAMESPACE
