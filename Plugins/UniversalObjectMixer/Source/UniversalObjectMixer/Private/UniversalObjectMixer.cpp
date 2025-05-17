@@ -19,7 +19,7 @@ void FUniversalObjectMixerModule::ShutdownModule()
 void FUniversalObjectMixerModule::Initialize()
 {
 	FObjectMixerEditorModule::Initialize();
-	// DefaultFilterClass = URayTracingObjectFilter::StaticClass();
+	DefaultFilterClass = URayTracingObjectFilter::StaticClass();
 }
 
 FName FUniversalObjectMixerModule::GetModuleName() const
