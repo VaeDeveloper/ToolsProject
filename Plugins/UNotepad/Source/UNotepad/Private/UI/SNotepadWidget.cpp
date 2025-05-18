@@ -7,7 +7,7 @@
 
 #define LOCTEXT_NAMESPACE "UNotepadWidget"
 
-namespace SlateStatic
+namespace UNotepad
 {
 	static TSharedRef<SSeparator> CreateTransparentSeparator(float ThicknessValue)
 	{
@@ -66,7 +66,7 @@ void SNotepadWidget::Construct(const FArguments& InArgs)
 			.AutoHeight()
 			[
 				SNew(SSpacer)
-					.Size(FVector2D(0.0f, 6.0f))
+				.Size(FVector2D(0.0f, 6.0f))
 			]
 			+ SVerticalBox::Slot()
 			.AutoHeight()
@@ -77,14 +77,14 @@ void SNotepadWidget::Construct(const FArguments& InArgs)
 			.AutoHeight()
 			[
 				SNew(SSpacer)
-					.Size(FVector2D(0.0f, 6.0f))
+				.Size(FVector2D(0.0f, 6.0f))
 			]
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			[
 				SNew(SSeparator)
-					.Thickness(2.0f)
-					.ColorAndOpacity(FColor::White)
+				.Thickness(2.0f)
+				.ColorAndOpacity(FColor::White)
 			]
 
 			+ SVerticalBox::Slot()
@@ -102,18 +102,18 @@ void SNotepadWidget::Construct(const FArguments& InArgs)
 					.ForegroundColor(FSlateColor(FLinearColor::Gray))
 					[
 						SNew(SBox)
-							.VAlign(VAlign_Fill)
-							.HAlign(HAlign_Fill)
-							[
-								GetDocumentContent()
-							]
+						.VAlign(VAlign_Fill)
+						.HAlign(HAlign_Fill)
+						[
+							GetDocumentContent()
+						]
 					]
 			]
 
 			+ SVerticalBox::Slot()
 			.AutoHeight()
 			[
-				SlateStatic::CreateTransparentSeparator(1.0f)
+				UNotepad::CreateTransparentSeparator(1.0f)
 			]
 		];
 }
@@ -194,7 +194,7 @@ void SNotepadWidget::SaveAsDocumentInFile(bool bSaveAs)
 		LastSavedFilePath = SavePath;
 	}
 
-	// Разбиваем текст на строки
+
 	TArray<FString> Lines;
 	CurrentText.ParseIntoArrayLines(Lines);
 
@@ -209,9 +209,8 @@ void SNotepadWidget::SaveAsDocumentInFile(bool bSaveAs)
 		{
 			CombinedText += Lines[i] + LINE_TERMINATOR;
 			SlowTask.EnterProgressFrame(1.f);
-
-			// Можно добавить задержку, чтобы пользователь увидел прогресс
-			// FPlatformProcess::Sleep(0.001f);
+			
+			FPlatformProcess::Sleep(0.001f);
 		}
 
 		if(FFileHelper::SaveStringToFile(CombinedText, *SavePath, FFileHelper::EEncodingOptions::ForceUTF8))
@@ -358,8 +357,6 @@ void SNotepadWidget::CreateNewDocument()
 	if(DocumentContentTextBox.IsValid())
 	{
 		DocumentContentTextBox->SetText(FText::FromString(DocumentContentText));
-
-		// Устанавливаем фокус на текстовое поле
 		FSlateApplication::Get().SetKeyboardFocus(DocumentContentTextBox);
 	}
 
@@ -369,6 +366,7 @@ void SNotepadWidget::CreateNewDocument()
 
 void SNotepadWidget::SaveCurrentDocument()
 {
+	//TODO implement save current document
 }
 
 
