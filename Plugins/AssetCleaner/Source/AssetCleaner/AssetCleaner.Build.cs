@@ -57,9 +57,10 @@ public class AssetCleaner : ModuleRules
 					"AssetRegistry",
 					"StatusBar",
 					"ApplicationCore",
-					"RHI"
+					"RHI",
+					"DeveloperSettings",
 
-                }
+				}
             );
 		
 		

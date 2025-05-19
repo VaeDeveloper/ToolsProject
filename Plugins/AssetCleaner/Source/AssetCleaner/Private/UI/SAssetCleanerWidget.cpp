@@ -30,6 +30,8 @@
 #include "SMetaDataView.h"
 #include "UObject/SavePackage.h"
 
+#include "Libraries/AssetFilterLibrary.h"
+
 DEFINE_LOG_CATEGORY_STATIC(SAssetCleanerWidgetLog, All, All)
 DEFINE_LOG_CATEGORY_STATIC(SAssetCleanerTableRowLog, All, All)
 DEFINE_LOG_CATEGORY_STATIC(SFilterContainerWidgetLog, All, All)
@@ -627,25 +629,26 @@ void SAssetCleanerWidget::OnFilterChanged(const FString& FilterName, bool bIsEna
 {
 	UE_LOG(SAssetCleanerWidgetLog, Warning, TEXT("Filter Changed: %s -> %s"), *FilterName, bIsEnabled ? TEXT("Enabled") : TEXT("Disabled"));
 
+	using namespace AssetCleaner;
 	if (bIsEnabled)
 	{
 		ActiveAdvancedFilters.Add(FilterName);
 
 		if (FilterName == TEXT("Assets With Metadata"))
 		{
-			CollectMetadataAssets(); 
+			FAssetFilterLibrary::CollectMetadata(StoredAssetList);
 		}
 		if (FilterName == TEXT("Textures Without Compression"))
 		{
-			CollectTexturesWithoutCompression();
+			FAssetFilterLibrary::CollectTexturesWithoutCompression(StoredAssetList);
 		}
 		if (FilterName == TEXT("Assets With Invalid References"))
 		{
-			CollectAssetsWithInvalidReferences();
+			FAssetFilterLibrary::CollectAssetsWithInvalidReferences(StoredAssetList);
 		}
 		if (FilterName == TEXT("Textures With Wrong Size (PoTwo Check)"))
 		{
-			CollectTexturesWithWrongSize();
+			FAssetFilterLibrary::CollectTexturesWithWrongSize(StoredAssetList);
 			UpdateFilteredAssetList(); 
 			return;
 		}
@@ -1003,7 +1006,6 @@ bool SAssetCleanerWidget::HasCycle(const FAssetData& Asset)
 	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
 	const FAssetIdentifier StartId(Asset.PackageName);
 
-	// Этап 1: собрать все зависимости
 	TSet<FAssetIdentifier> TempVisited;
 	TArray<FAssetIdentifier> AllIdentifiersToScan;
 
@@ -1113,46 +1115,6 @@ void SAssetCleanerWidget::CollectAssetsWithInvalidReferences()
 	}
 }
 
-void SAssetCleanerWidget::CollectTexturesWithWrongSize()
-{
-	TexturesWithWrongSize.Empty();
-
-	TArray<TSharedPtr<FAssetData>> TextureAssets;
-	for (const TSharedPtr<FAssetData>& Asset : StoredAssetList)
-	{
-		if (Asset.IsValid() && Asset->AssetClassPath == UTexture2D::StaticClass()->GetClassPathName())
-		{
-			TextureAssets.Add(Asset);
-		}
-	}
-
-	FScopedSlowTask SlowTask(TextureAssets.Num(), FText::FromString(TEXT("Scanning textures with wrong size (Non-Po2)...")));
-	SlowTask.MakeDialog(true);
-
-	auto IsPowerOfTwo = [](int32 Value) -> bool {
-		return Value > 0 && (Value & (Value - 1)) == 0;
-	};
-
-	for (const TSharedPtr<FAssetData>& Asset : TextureAssets)
-	{
-		SlowTask.EnterProgressFrame(1);
-
-		UObject* LoadedObject = Asset->GetAsset();
-		if (!LoadedObject) continue;
-
-		if (UTexture2D* Texture = Cast<UTexture2D>(LoadedObject))
-		{
-			int32 Width = Texture->GetSizeX();
-			int32 Height = Texture->GetSizeY();
-
-			if (!IsPowerOfTwo(Width) || !IsPowerOfTwo(Height))
-			{
-				TexturesWithWrongSize.Add(Asset->PackageName);
-			}
-		}
-	}
-}
-
 void SAssetCleanerWidget::CollectMaterialsInfoManyInstruction()
 {
 	FilteredMaterials.Empty();
@@ -1209,88 +1171,24 @@ void SAssetCleanerWidget::CollectMaterialsInfoManyExpression()
 	}
 }
 
-void SAssetCleanerWidget::CollectMetadataAssets()
-{
-	AssetsWithMetadata.Empty();
-
-	FScopedSlowTask SlowTask(StoredAssetList.Num(), FText::FromString(TEXT("Collecting assets with metadata...")));
-	SlowTask.MakeDialog(true);
-
-	for(const TSharedPtr<FAssetData>& Asset : StoredAssetList)
-	{
-		SlowTask.EnterProgressFrame(1);
-
-		if(!Asset.IsValid()) continue;
-
-		FSoftObjectPath SoftPath = Asset->ToSoftObjectPath();
-		UObject* LoadedObject = SoftPath.ResolveObject();
-
-		if(!LoadedObject)
-		{
-			LoadedObject = SoftPath.TryLoad();
-		}
-
-		if(!LoadedObject || LoadedObject->HasAnyFlags(RF_NeedLoad | RF_NeedPostLoad))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Skipping %s — not fully loaded."), *Asset->GetObjectPathString());
-			continue;
-		}
-
-		if(const TMap<FName, FString>* MetaMap = UMetaData::GetMapForObject(LoadedObject))
-		{
-			if(MetaMap->Num() > 0)
-			{
-				AssetsWithMetadata.Add(Asset->PackageName);
-			}
-		}
-	}
-}
 
 void SAssetCleanerWidget::InitializeAdvancedFilters()
 {
+	using namespace AssetCleaner;
+
 	AdvancedFilterPredicates = 
 	{
 		{ TEXT("Assets Without References"), [](const FAssetData& Asset) -> bool {
-			IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
-
-			TArray<FName> Referencers;
-			AssetRegistry.GetReferencers(Asset.PackageName, Referencers);
-
-			return Referencers.Num() == 0;
+			return FAssetFilterLibrary::IsAssetUnreferenced(Asset);
 		}},
 		{ TEXT("Assets With Missing References"), [](const FAssetData& Asset) -> bool {
-			IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
-
-			TArray<FAssetDependency> Dependencies;
-			const FAssetIdentifier AssetId(Asset.PackageName);
-
-			const bool bGotDeps = AssetRegistry.GetDependencies(
-				AssetId,
-				Dependencies,
-				UE::AssetRegistry::EDependencyCategory::Package,
-				UE::AssetRegistry::FDependencyQuery(UE::AssetRegistry::EDependencyQuery::Hard)
-			);
-
-			if (!bGotDeps) return false;
-
-			for (const FAssetDependency& Dependency : Dependencies)
-			{
-				TArray<FAssetData> DependentAssets;
-				AssetRegistry.GetAssetsByPackageName(Dependency.AssetId.PackageName, DependentAssets);
-				if (DependentAssets.Num() == 0)
-				{
-					return true;
-				}
-			}
-
-			return false;
+			return FAssetFilterLibrary::IsAssetWithMissingReferences(Asset);
 		}},
 		{ TEXT("Assets With Metadata"), [this](const FAssetData& Asset) -> bool {
-			
-			return AssetsWithMetadata.Contains(Asset.PackageName);
+			return FAssetFilterLibrary::AssetsWithMetadata.Contains(Asset.PackageName);
 		}},
 		{ TEXT("Assets With Long Names"), [](const FAssetData& Asset) -> bool {
-			return Asset.AssetName.ToString().Len() > AssetCleaner::MaxNameLength; // Пример длины
+			return Asset.AssetName.ToString().Len() > AssetCleaner::MaxNameLength;
 		}},
 		{ TEXT("Assets Outside of Source Control"), [](const FAssetData& Asset) -> bool {
 			// TODO: Проверить интеграцию с Source Control
@@ -1307,8 +1205,8 @@ void SAssetCleanerWidget::InitializeAdvancedFilters()
 			const FString Path = Asset.PackagePath.ToString();
 			return Path.Contains(TEXT("/Temp")) || Path.Contains(TEXT("/Temporary"));
 		}},
-		{ TEXT("Assets With Invalid References"), [this](const FAssetData& Asset) -> bool {
-			return AssetsWithInvalidReferences.Contains(Asset.PackageName);
+		{ TEXT("Assets With Invalid References"), [](const FAssetData& Asset) -> bool {
+			return FAssetFilterLibrary::AssetsWithInvalidReferences.Contains(Asset.PackageName);
 		}},
 		{ TEXT("Assets With Circular References"), [this](const FAssetData& Asset) -> bool {
 			return HasCycle(Asset);
@@ -1319,10 +1217,10 @@ void SAssetCleanerWidget::InitializeAdvancedFilters()
 				|| Name.StartsWith(TEXT("My"));
 		}},
 		{ TEXT("Textures Without Compression"), [this](const FAssetData& Asset) -> bool {
-			return TexturesWithoutCompression.Contains(Asset.PackageName);
+			return FAssetFilterLibrary::TexturesWithoutCompression.Contains(Asset.PackageName);
 		}},
 		{ TEXT("Textures With Wrong Size (PoTwo Check)"), [this](const FAssetData& Asset) -> bool {
-			return TexturesWithWrongSize.Contains(Asset.PackageName);
+			return FAssetFilterLibrary::TexturesWithWrongSize.Contains(Asset.PackageName);
 		}},
 		{ TEXT("Assets Without Tags"), [](const FAssetData& Asset) -> bool {
 			return Asset.TagsAndValues.Num() == 0;

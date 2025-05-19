@@ -13,7 +13,7 @@ UDataAssetManagerSettings::UDataAssetManagerSettings()
 
 FText UDataAssetManagerSettings::GetSectionText() const
 {
-	return LOCTEXT("SettingsDisplayNama", "DataAssetManager");
+	return LOCTEXT("SettingsDisplayName", "DataAssetManager");
 }
 
 #undef LOCTEXT_NAMESPACE
