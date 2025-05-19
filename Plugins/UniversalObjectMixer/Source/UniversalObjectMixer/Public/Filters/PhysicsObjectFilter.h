@@ -10,7 +10,7 @@
 /**
  *
  */
-UCLASS()
+UCLASS(BlueprintType, EditInlineNew)
 class UNIVERSALOBJECTMIXER_API UPhysicsObjectFilter : public UObjectMixerObjectFilter
 {
 	GENERATED_BODY()
