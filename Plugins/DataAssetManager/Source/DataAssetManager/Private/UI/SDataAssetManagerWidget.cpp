@@ -1058,67 +1058,68 @@ void SDataAssetManagerWidget::CreateContextMenuFromDataAsset(const FGeometry& In
 
 TSharedRef<SWidget> SDataAssetManagerWidget::CreateComboButtonContent()
 {
-    TSharedRef<SVerticalBox> VerticalBox = SNew(SVerticalBox)
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SNew(SSpacer)
-			.Size(FVector2D(2.0f, 2.0f))
-		]
+	FMenuBuilder MenuBuilder(/*bInShouldCloseWindowAfterMenuSelection*/ false, nullptr);
 
-		+ SVerticalBox::Slot()
-		[
-			SNew(SListView<TSharedPtr<FString>>)
-			.SelectionMode(ESelectionMode::None)
-			.ListItemsSource(&ComboBoxAssetListItems)
-			.OnGenerateRow_Lambda([this](TSharedPtr<FString> SourceItem, const TSharedRef<STableViewBase>& OwnerTable)
-			{
-				return SNew(STableRow<TSharedPtr<FString>>, OwnerTable)
-					.Padding(7.f)
-					[
-						SNew(SOverlay)
-						+SOverlay::Slot()
-						[
-							SNew(SCheckBox)
-							.BorderBackgroundColor(FSlateColor::UseForeground())
-							.ForegroundColor(FSlateColor::UseForeground())
-							.IsChecked_Lambda([&, SourceItem]()
-							{
-								return ActiveFilters.Contains(*SourceItem) ? 
-									ECheckBoxState::Checked : 
-									ECheckBoxState::Unchecked;
-							})
-							.OnCheckStateChanged_Lambda([this, SourceItem](ECheckBoxState NewState)
-							{
-								(NewState == ECheckBoxState::Checked ? 
-									static_cast<void>(ActiveFilters.Add(*SourceItem)) : 
-									static_cast<void>(ActiveFilters.Remove(*SourceItem)));
-								UpdateFilteredAssetList();
-							})
-							[
-								SNew(STextBlock)
-								.ColorAndOpacity(FSlateColor::UseForeground())
-								.Text(FText::FromString(*SourceItem))
-							]
-						]
-					];
-			})
-		]
-		
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SNew(SSpacer)
-			.Size(FVector2D(2.0f, 2.0f))
-		];
+	MenuBuilder.BeginSection("ResetSection", FText::FromString("Actions"));
+	{
+		MenuBuilder.AddMenuEntry(
+			FText::FromString("Reset Filters"),
+			FText::FromString("Clear all selected filters."),
+			FSlateIcon(),
+			FUIAction(FExecuteAction::CreateLambda([this] ()
+				{
+					ActiveFilters.Empty();
+					UpdateFilteredAssetList();
+				}))
+		);
+	}
+	MenuBuilder.EndSection();
 
-
-	return SNew(SBox)
-		.MaxDesiredHeight(400.f)
-		.WidthOverride(250.f)
+	MenuBuilder.AddWidget(
+		SNew(SBox)
+		.Padding(FMargin(5.f, 7.f))
 		[
-			VerticalBox
-		];
+			SNew(SSeparator)
+		],
+		FText::GetEmpty());
+
+	for(TSharedPtr<FString> FilterItem : ComboBoxAssetListItems)
+	{
+		const FString FilterName = *FilterItem;
+
+		FUIAction Action(
+			FExecuteAction::CreateLambda([this, FilterName] ()
+				{
+					if(ActiveFilters.Contains(FilterName))
+					{
+						ActiveFilters.Remove(FilterName);
+					}
+					else
+					{
+						ActiveFilters.Add(FilterName);
+					}
+
+					UpdateFilteredAssetList();
+				}),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda([this, FilterName] ()
+				{
+					return ActiveFilters.Contains(FilterName);
+				})
+		);
+
+		MenuBuilder.AddMenuEntry(
+			FText::FromString(FilterName),
+			FText::GetEmpty(),
+			FSlateIcon(),
+			Action,
+			NAME_None,
+			EUserInterfaceActionType::ToggleButton
+		);
+	}
+
+	return MenuBuilder.MakeWidget();
+
 }
 
 FReply SDataAssetManagerWidget::OnItemClicked(TSharedPtr<FString> SourceItem)

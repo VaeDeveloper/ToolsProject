@@ -564,8 +564,7 @@ protected:
 					LOCTEXT("DisableAllFilters", "Disable All Filters"),
 					LOCTEXT("DisableAllFiltersTooltip", "Disables all active filters."),
 					FSlateIcon(),
-					FUIAction( FExecuteAction::CreateSP(this, &FCustomFilter::DisableAllFilters))
-					);
+					FUIAction( FExecuteAction::CreateSP(this, &FCustomFilter::DisableAllFilters)));
 			}
 			MenuBuilder.EndSection();
 
@@ -658,7 +657,6 @@ void SAssetCleanerWidget::OnFilterChanged(const FString& FilterName, bool bIsEna
 		{
 			CollectMaterialsInfoManyExpression();
 		}
-
 	}
 	else
 	{
@@ -685,12 +683,13 @@ void SAssetCleanerWidget::Construct(const FArguments &InArgs)
 	TSharedPtr<SLayeredImage> FilterImage = CreateFilterImage();
 	InitializeAdvancedFilters();
 
-	TArray<SFilterContainerWidget::FNamedFilterData> Filters = 
+	TArray<SFilterContainerWidget::FNamedFilterData> Filters =
 	{
+		// --- Assets Related ---
 		{ TEXT("Assets Without References"), TEXT("Assets that are not referenced by any other asset in the project.") },
+		{ TEXT("Assets With Missing References"), TEXT("Assets that reference other assets which no longer exist.") },
 		{ TEXT("Assets With Metadata"), TEXT("Assets that contain metadata which might be unnecessary or outdated.") },
 		{ TEXT("Assets With Long Names"), TEXT("Assets with excessively long names that may cause issues in some platforms.") },
-		{ TEXT("Assets With Missing References"), TEXT("Assets that reference other assets which no longer exist.") },
 		{ TEXT("Assets Outside of Source Control"), TEXT("Assets that are not currently tracked by source control.") },
 		{ TEXT("Assets With Redirectors"), TEXT("Assets that are redirectors and may need to be fixed up.") },
 		{ TEXT("Assets With Non-Standard Folder Name"), TEXT("Assets located in folders that don't follow naming conventions.") },
@@ -700,34 +699,40 @@ void SAssetCleanerWidget::Construct(const FArguments &InArgs)
 		{ TEXT("Assets With Default Name"), TEXT("Assets that still use their auto-generated default names.") },
 		{ TEXT("Assets Without Tags"), TEXT("Assets that are not tagged with any metadata or category tags.") },
 		{ TEXT("Assets Without LODs"), TEXT("Static meshes that are missing Level of Detail (LOD) versions.") },
+
+		// --- Textures Related ---
 		{ TEXT("Textures Without Compression"), TEXT("Textures that do not use any compression, increasing memory usage.") },
 		{ TEXT("Textures With Wrong Size (PoTwo Check)"), TEXT("Textures whose dimensions are not powers of two (PoT), which can cause rendering or memory issues.") },
+
+		// --- Materials Related ---
 		{ TEXT("Materials With Too Many Instructions"), TEXT("Materials that exceed a safe number of instructions, which can affect performance.") },
 		{ TEXT("Materials Without Usage Flags"), TEXT("Materials missing usage flags, which may prevent them from compiling properly for all scenarios.") },
 		{ TEXT("Materials With Too Many Expressions"), TEXT("Materials containing too many expression nodes, possibly affecting performance or readability.") },
+
+		// --- Meshes and Skeletal ---
 		{ TEXT("Skeletal Meshes Without Physics Asset"), TEXT("Skeletal meshes missing a physics asset, required for collision or simulation.") },
 		{ TEXT("Static Meshes Without Collision"), TEXT("Static meshes that lack collision settings or geometry.") },
 		{ TEXT("Meshes With Nanite Disabled"), TEXT("Meshes that do not have Nanite enabled, missing potential rendering optimization.") },
+
+		// --- Sounds ---
 		{ TEXT("Sound Cues Without Sound"), TEXT("Sound cues that do not reference any sound assets.") },
+		{ TEXT("Sound Cues Without Output"), TEXT("Sound cues that do not route audio to any output node.") },
+		{ TEXT("Sounds With High File Size"), TEXT("Sound files that are larger than recommended size and may impact memory or loading.") },
+		{ TEXT("Sounds Without Attenuation Settings"), TEXT("Sound assets lacking attenuation settings, which affects how sound is heard spatially.") },
+
+		// --- Blueprints ---
 		{ TEXT("Blueprints Without Node Logic"), TEXT("Blueprints that have no node logic in the event graph.") },
 		{ TEXT("Blueprints With Compile Errors"), TEXT("Blueprints that have compilation errors and cannot run.") },
 		{ TEXT("Blueprints Without Construction Script"), TEXT("Blueprints that do not implement a construction script.") },
 		{ TEXT("Blueprints Without Comment Blocks"), TEXT("Blueprints with no comment blocks, making them harder to read and maintain.") },
-		{ TEXT("Sound Cues Without Output"), TEXT("Sound cues that do not route audio to any output node.") },
-		{ TEXT("Sounds With High File Size"), TEXT("Sound files that are larger than recommended size and may impact memory or loading.") },
-		{ TEXT("Sounds Without Attenuation Settings"), TEXT("Sound assets lacking attenuation settings, which affects how sound is heard spatially.") },
+
+		// --- Levels & Animation ---
 		{ TEXT("Levels With Unused Actors"), TEXT("Levels containing actors that are not used and can be safely deleted.") },
 		{ TEXT("Anim Sequences Without Skeleton"), TEXT("Animation sequences that do not have an assigned skeleton.") },
 		{ TEXT("Montages Without Sections"), TEXT("Animation montages missing section markers for playback control.") },
 		{ TEXT("Animations With Missing Notifie"), TEXT("Animation assets missing notifies that may be required for gameplay or effects.") }
 	};
 
-
-	FDetailsViewArgs DetailsViewArgs;
-	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
-	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	DetailsView = PropertyModule.CreateDetailView(DetailsViewArgs);
-	
 	TSharedRef<SVerticalBox> VerticalBox = SNew(SVerticalBox)
 		+ SVerticalBox::Slot()
 		.Padding(2.0f, 6.0f, 0.0f, 6.0f)
@@ -790,16 +795,16 @@ void SAssetCleanerWidget::Construct(const FArguments &InArgs)
 		];
 
 	TSharedPtr<SSplitter> Splitter = SNew(SSplitter)
-		+SSplitter::Slot()
+		+ SSplitter::Slot()
 		.SizeRule(SSplitter::ESizeRule::SizeToContent)
 		[
 			SNew(SVerticalBox)
-				+SVerticalBox::Slot()
-				.FillHeight(0.05f)
-				.VAlign(VAlign_Center)
-				.HAlign(HAlign_Center)
-				[
-					SNew(SBorder)
+			+ SVerticalBox::Slot()
+			.FillHeight(0.05f)
+			.VAlign(VAlign_Center)
+			.HAlign(HAlign_Center)
+			[
+				SNew(SBorder)
 					.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
 					.VAlign(VAlign_Center)
 
@@ -807,60 +812,27 @@ void SAssetCleanerWidget::Construct(const FArguments &InArgs)
 						SNew(STextBlock)
 						.Text(FText::FromString("Advanced Filters"))
 					]
-				]
+			]
 
-				+SVerticalBox::Slot()
-				.Padding(FMargin(2.0f))
-				[
-					SNew(SFilterContainerWidget)
-					.FilterList(Filters)
-					.OnFilterChanged(this, &SAssetCleanerWidget::OnFilterChanged)
-				]
+			+ SVerticalBox::Slot()
+			.Padding(FMargin(2.0f))
+			[
+				SNew(SFilterContainerWidget)
+				.FilterList(Filters)
+				.OnFilterChanged(this, &SAssetCleanerWidget::OnFilterChanged)
+			]
 		]
 
-		+SSplitter::Slot()
+		+ SSplitter::Slot()
 		[
 			VerticalBox
-		]
-		
-		+SSplitter::Slot()
-		[
-			DetailsView.ToSharedRef()
 		];
-
 	
 
 	ChildSlot
 	[
 		Splitter.ToSharedRef()
 	];
-
-	if(FilteredDataAssets.Num() > 0)
-	{
-		AssetListView->SetSelection(FilteredDataAssets[0]);
-		OnAssetSelected(FilteredDataAssets[0], ESelectInfo::Direct);
-	}
-}
-
-
-void SAssetCleanerWidget::OpenDetailViewPanelForAsset(TSharedPtr<FAssetData> SelectedItem)
-{
-	if(!SelectedItem.IsValid())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Selected Item is not valid"));
-		return;
-	}
-	
-	UObject* const Asset = Cast<UObject>(SelectedItem->GetAsset());
-	if(!Asset)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to cast SelectedItem to UDataAsset. The asset might be of a different type or invalid."));
-		return;
-	}
-	
-	DetailsView->SetObject(Asset, true);
-
-
 
 }
 
@@ -931,77 +903,140 @@ void SAssetCleanerWidget::OnSearchTextChanged(const FText& InText)
 
 TSharedRef<SWidget> SAssetCleanerWidget::CreateComboButtonContent()
 {
-    TSharedRef<SVerticalBox> VerticalBox = SNew(SVerticalBox)
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SNew(SSpacer)
-			.Size(FVector2D(2.0f, 2.0f))
-		]
+    //TSharedRef<SVerticalBox> VerticalBox = SNew(SVerticalBox)
+	//	+ SVerticalBox::Slot()
+	//	.AutoHeight()
+	//	[
+	//		SNew(SSpacer)
+	//		.Size(FVector2D(2.0f, 2.0f))
+	//	]
+	//
+	//	+ SVerticalBox::Slot()
+	//	[
+	//		SNew(SListView<TSharedPtr<FString>>)
+	//		.SelectionMode(ESelectionMode::None)
+	//		.ListItemsSource(&ComboBoxAssetListItems)
+	//		.OnGenerateRow_Lambda([this](TSharedPtr<FString> SourceItem, const TSharedRef<STableViewBase>& OwnerTable)
+	//		{
+	//			return SNew(STableRow<TSharedPtr<FString>>, OwnerTable)
+	//				.Padding(7.f)
+	//				[
+	//					SNew(SHorizontalBox)
+	//						+SHorizontalBox::Slot()
+	//						.AutoWidth()
+	//						.VAlign(VAlign_Center)
+	//						[
+	//						SNew(SCheckBox)
+	//						.BorderBackgroundColor(FSlateColor::UseForeground())
+	//						.ForegroundColor(FSlateColor::UseForeground())
+	//						.IsChecked_Lambda([&, SourceItem]()
+	//							{
+	//								return ActiveFilters.Contains(*SourceItem) ? 
+	//									ECheckBoxState::Checked : 
+	//									ECheckBoxState::Unchecked;
+	//							})
+	//						.OnCheckStateChanged_Lambda([this, SourceItem](ECheckBoxState NewState)
+	//							{
+	//								(NewState == ECheckBoxState::Checked ? 
+	//									static_cast<void>(ActiveFilters.Add(*SourceItem)) : 
+	//									static_cast<void>(ActiveFilters.Remove(*SourceItem)));
+	//								UpdateFilteredAssetList();
+	//							})
+	//						]
+	//						+SHorizontalBox::Slot()
+	//						.AutoWidth()
+	//						[
+	//							SNew(SSeparator)
+	//						]
+	//						+SHorizontalBox::Slot()
+	//						.AutoWidth()
+	//						.VAlign(VAlign_Center)
+	//						[
+	//							SNew(STextBlock)
+	//							.ColorAndOpacity(FSlateColor::UseForeground())
+	//							.Text(FText::FromString(*SourceItem))
+	//						]
+	//				];
+	//		})
+	//	]
+	//	
+	//	+ SVerticalBox::Slot()
+	//	.AutoHeight()
+	//	[
+	//		SNew(SSpacer)
+	//		.Size(FVector2D(2.0f, 2.0f))
+	//	];
+	//
+	//
+	//return SNew(SBox)
+	//	.MaxDesiredHeight(400.f)
+	//	.WidthOverride(250.f)
+	//	[
+	//		VerticalBox
+	//	];
 
-		+ SVerticalBox::Slot()
+
+	FMenuBuilder MenuBuilder(/*bInShouldCloseWindowAfterMenuSelection*/ false, nullptr);
+
+	MenuBuilder.BeginSection("ResetSection", FText::FromString("Actions"));
+	{
+		MenuBuilder.AddMenuEntry(
+			FText::FromString("Reset Filters"),
+			FText::FromString("Clear all selected filters."),
+			FSlateIcon(),
+			FUIAction(FExecuteAction::CreateLambda([this] ()
+				{
+					ActiveFilters.Empty();
+					UpdateFilteredAssetList();
+				}))
+		);
+	}
+	MenuBuilder.EndSection();
+
+	MenuBuilder.AddWidget(
+		SNew(SBox)
+		.Padding(FMargin(5.f, 7.f))
 		[
-			SNew(SListView<TSharedPtr<FString>>)
-			.SelectionMode(ESelectionMode::None)
-			.ListItemsSource(&ComboBoxAssetListItems)
-			.OnGenerateRow_Lambda([this](TSharedPtr<FString> SourceItem, const TSharedRef<STableViewBase>& OwnerTable)
-			{
-				return SNew(STableRow<TSharedPtr<FString>>, OwnerTable)
-					.Padding(7.f)
-					[
-						SNew(SHorizontalBox)
-							+SHorizontalBox::Slot()
-							.AutoWidth()
-							.VAlign(VAlign_Center)
-							[
-							SNew(SCheckBox)
-							.BorderBackgroundColor(FSlateColor::UseForeground())
-							.ForegroundColor(FSlateColor::UseForeground())
-							.IsChecked_Lambda([&, SourceItem]()
-								{
-									return ActiveFilters.Contains(*SourceItem) ? 
-										ECheckBoxState::Checked : 
-										ECheckBoxState::Unchecked;
-								})
-							.OnCheckStateChanged_Lambda([this, SourceItem](ECheckBoxState NewState)
-								{
-									(NewState == ECheckBoxState::Checked ? 
-										static_cast<void>(ActiveFilters.Add(*SourceItem)) : 
-										static_cast<void>(ActiveFilters.Remove(*SourceItem)));
-									UpdateFilteredAssetList();
-								})
-							]
-							+SHorizontalBox::Slot()
-							.AutoWidth()
-							[
-								SNew(SSeparator)
-							]
-							+SHorizontalBox::Slot()
-							.AutoWidth()
-							.VAlign(VAlign_Center)
-							[
-								SNew(STextBlock)
-								.ColorAndOpacity(FSlateColor::UseForeground())
-								.Text(FText::FromString(*SourceItem))
-							]
-					];
-			})
-		]
+			SNew(SSeparator)
+		],
+		FText::GetEmpty());
+
+	for(TSharedPtr<FString> FilterItem : ComboBoxAssetListItems)
+	{
+		const FString FilterName = *FilterItem;
 		
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SNew(SSpacer)
-			.Size(FVector2D(2.0f, 2.0f))
-		];
+		FUIAction Action(
+			FExecuteAction::CreateLambda([this, FilterName] ()
+				{
+					if(ActiveFilters.Contains(FilterName))
+					{
+						ActiveFilters.Remove(FilterName);
+					}
+					else
+					{
+						ActiveFilters.Add(FilterName);
+					}
 
+					UpdateFilteredAssetList();
+				}),
+			FCanExecuteAction(),
+			FIsActionChecked::CreateLambda([this, FilterName] ()
+				{
+					return ActiveFilters.Contains(FilterName);
+				})
+		);
 
-	return SNew(SBox)
-		.MaxDesiredHeight(400.f)
-		.WidthOverride(250.f)
-		[
-			VerticalBox
-		];
+		MenuBuilder.AddMenuEntry(
+			FText::FromString(FilterName),
+			FText::GetEmpty(),
+			FSlateIcon(),
+			Action,
+			NAME_None,
+			EUserInterfaceActionType::ToggleButton 
+		);
+	}
+
+	return MenuBuilder.MakeWidget();
 }
 
 void SAssetCleanerWidget::InitializeAssetTypeComboBox(TArray<TSharedPtr<FAssetData>> AssetDataList)
@@ -1065,11 +1100,9 @@ bool SAssetCleanerWidget::HasCycle(const FAssetData& Asset)
 	};
 	CollectAllDeps(StartId);
 
-	// Этап 2: Инициализируем прогресс
 	FScopedSlowTask SlowTask((float)AllIdentifiersToScan.Num(), FText::FromString(TEXT("Scanning for circular references...")));
 	SlowTask.MakeDialog(true);
 
-	// Этап 3: проверка на циклы
 	TSet<FAssetIdentifier> Visited;
 	TSet<FAssetIdentifier> RecursionStack;
 
@@ -1100,7 +1133,6 @@ bool SAssetCleanerWidget::HasCycle(const FAssetData& Asset)
 		return false;
 	};
 
-	// Этап 4: проход по всем идентификаторам с прогрессом
 	for (const FAssetIdentifier& Id : AllIdentifiersToScan)
 	{
 		if (SlowTask.ShouldCancel()) break;
@@ -1221,8 +1253,8 @@ void SAssetCleanerWidget::CollectMaterialsInfoManyInstruction()
 			FilteredMaterials.Add(Asset->PackageName);
 		}
 	}
-}
 
+}
 void SAssetCleanerWidget::CollectMaterialsInfoManyExpression()
 {
 	FilteredMaterials.Empty();
@@ -1254,26 +1286,34 @@ void SAssetCleanerWidget::CollectMetadataAssets()
 {
 	AssetsWithMetadata.Empty();
 
-	FScopedSlowTask SlowTask(StoredAssetList.Num(),
-		FText::FromString(TEXT("Collecting assets with metadata...")));
-	SlowTask.MakeDialog(true); 
+	FScopedSlowTask SlowTask(StoredAssetList.Num(), FText::FromString(TEXT("Collecting assets with metadata...")));
+	SlowTask.MakeDialog(true);
 
-	for (const TSharedPtr<FAssetData>& Asset : StoredAssetList)
+	for(const TSharedPtr<FAssetData>& Asset : StoredAssetList)
 	{
 		SlowTask.EnterProgressFrame(1);
 
-		if (!Asset.IsValid()) continue;
+		if(!Asset.IsValid()) continue;
 
-		UObject* LoadedObject = Asset->GetAsset(); 
+		FSoftObjectPath SoftPath = Asset->ToSoftObjectPath();
+		UObject* LoadedObject = SoftPath.ResolveObject();
 
-		if (LoadedObject)
+		if(!LoadedObject)
 		{
-			if (const TMap<FName, FString>* MetaMap = UMetaData::GetMapForObject(LoadedObject))
+			LoadedObject = SoftPath.TryLoad();
+		}
+
+		if(!LoadedObject || LoadedObject->HasAnyFlags(RF_NeedLoad | RF_NeedPostLoad))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Skipping %s — not fully loaded."), *Asset->GetObjectPathString());
+			continue;
+		}
+
+		if(const TMap<FName, FString>* MetaMap = UMetaData::GetMapForObject(LoadedObject))
+		{
+			if(MetaMap->Num() > 0)
 			{
-				if (MetaMap->Num() > 0)
-				{
-					AssetsWithMetadata.Add(Asset->PackageName);
-				}
+				AssetsWithMetadata.Add(Asset->PackageName);
 			}
 		}
 	}
@@ -1506,7 +1546,7 @@ void SAssetCleanerWidget::OnAssetSelected(TSharedPtr<FAssetData> SelectedItem, E
 		{
 			return;
 		}
-		OpenDetailViewPanelForAsset(SelectedItem);
+
 		const TArray<TSharedPtr<FAssetData>> SelectedItems = GetAssetListSelectedItem();
 
 		if (SelectedItems.Num() > 1)

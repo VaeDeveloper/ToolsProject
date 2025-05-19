@@ -183,7 +183,6 @@ private:
 	bool HasCycle(const FAssetData& Asset);
 	void EditSelectionInPropertyMatrix();
 
-	void OpenDetailViewPanelForAsset(TSharedPtr<FAssetData> SelectedItem);
 
 	TSet<FString> ActiveFilters;
 
@@ -194,16 +193,12 @@ private:
 	TSet<FName> TexturesWithoutCompression;
 	TSet<FName> AssetsWithInvalidReferences;
 	TSet<FName> TexturesWithWrongSize;
-
 	TSet<FName> FilteredMaterials;
 
-	/**
-	 * Property inspector for selected assets.
-	 *
-	 * Displays detailed UObject properties when
-	 * assets are selected in the list view.
-	 */
-	TSharedPtr<IDetailsView> DetailsView = nullptr;
+
+
+
+
 
 	/** 
 	 * Delegate handle for the OnFilesLoaded event subscription.
@@ -242,6 +237,9 @@ private:
 	 */
 	TArray<TSharedPtr<FAssetData>> StoredAssetList;
 
+	/**
+	 *
+	 */
 	FString SelectedDirectory;
 
 	/**
