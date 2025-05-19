@@ -200,13 +200,11 @@ void FToolsProjectEditor::OnUniversalInputCommitted(const FText& Text, ETextComm
 
 void FToolsProjectEditor::SaveTodoNote(const FString& Note)
 {
-    // Здесь можно добавить сохранение в .ini, файл, или EditorPerProjectUserSettings
     UE_LOG(LogTemp, Log, TEXT("[TODO] %s"), *Note);
 }
 
 void FToolsProjectEditor::SearchAssets(const FString& Query)
 {
-    // Здесь можно подключить AssetRegistry или ContentBrowserUtils
     UE_LOG(LogTemp, Log, TEXT("[Asset Search] Searching for: %s"), *Query);
 }
 
