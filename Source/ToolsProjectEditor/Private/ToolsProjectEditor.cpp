@@ -67,15 +67,15 @@ void FToolsProjectEditor::ShutdownModule()
 
 void FToolsProjectEditor::MakeCustomMenu(FMenuBarBuilder& MenuBuilder)
 {
-// Adds an invisible menu item to create spacing between other menu entries.
-// This item is non-interactive and cannot be selected. It is used purely for visual separation.
-////////////////////////////////////////////////////////////////////////////////////////////////
-	MenuBuilder.AddMenuEntry(
-		FText::FromString(TEXT("             ")),  
-		FText::FromString(TEXT("Invisible menu item")),
-		FSlateIcon(), 
-		FUIAction(FExecuteAction::CreateLambda([] () {}), FCanExecuteAction::CreateLambda([] () { return false; })));
-////////////////////////////////////////////////////////////////////////////////////////////////
+//// Adds an invisible menu item to create spacing between other menu entries.
+//// This item is non-interactive and cannot be selected. It is used purely for visual separation.
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//	MenuBuilder.AddMenuEntry(
+//		FText::FromString(TEXT("             ")),  
+//		FText::FromString(TEXT("Invisible menu item")),
+//		FSlateIcon(), 
+//		FUIAction(FExecuteAction::CreateLambda([] () {}), FCanExecuteAction::CreateLambda([] () { return false; })));
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
     MenuBuilder.AddPullDownMenu(
         LOCTEXT("ProjectManagementMenu", "Project Management"),
@@ -95,16 +95,15 @@ void FToolsProjectEditor::MakeCustomMenu(FMenuBarBuilder& MenuBuilder)
         FNewMenuDelegate::CreateRaw(this, &FToolsProjectEditor::FillNotepadMenu),
         "NotepadTools", FName(TEXT("NotepadTools")));
 
-// Adds an invisible menu item to create spacing between other menu entries.
-// This item is non-interactive and cannot be selected. It is used purely for visual separation.
-////////////////////////////////////////////////////////////////////////////////////////////////
-    MenuBuilder.AddMenuEntry(
-        FText::FromString(TEXT("                   ")),
-        FText::FromString(TEXT("Invisible menu item")),
-        FSlateIcon(),
-        FUIAction(FExecuteAction::CreateLambda([] () {}), FCanExecuteAction::CreateLambda([] () { return false; })));
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
+//// Adds an invisible menu item to create spacing between other menu entries.
+//// This item is non-interactive and cannot be selected. It is used purely for visual separation.
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//    MenuBuilder.AddMenuEntry(
+//        FText::FromString(TEXT("                   ")),
+//        FText::FromString(TEXT("Invisible menu item")),
+//        FSlateIcon(),
+//        FUIAction(FExecuteAction::CreateLambda([] () {}), FCanExecuteAction::CreateLambda([] () { return false; })));
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
     //MenuBuilder.AddVerifiedEditableText(
     //    LOCTEXT("UniversalInput", "Universal Input"),
