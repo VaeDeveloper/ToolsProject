@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
-
-
 #include "AssetCleanerSubsystem.generated.h"
 
 
@@ -18,7 +16,7 @@ class FPropertyEditorModule;
  * 
  */
 UCLASS()
-class ASSETCLEANER_API UAssetCleanerSubsystem : public UEditorSubsystem
+class ASSETCLEANER_API UAssetCleanerSubsystem final : public UEditorSubsystem
 {
 	GENERATED_BODY()
 
@@ -29,9 +27,9 @@ public:
 	
 
 	/* GetModule */
-	static FAssetToolsModule& GetModuleAssetTools();
-	static FAssetRegistryModule& GetModuleAssetRegistry();
-	static FContentBrowserModule& GetModuleContentBrowser();
-	static FPropertyEditorModule& GetModulePropertyEditor();
+	static FAssetToolsModule& GetAssetToolsModule();
+	static FAssetRegistryModule& GetAssetRegistryModule();
+	static FContentBrowserModule& GetContentBrowserModule();
+	static FPropertyEditorModule& GetPropertyEditorModule();
 
 };
