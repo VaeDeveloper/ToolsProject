@@ -16,7 +16,6 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "SceneOutlinerModule.h"
-#include "Columns/OutlinerRTGroupIDColumn.h"
 #include "Columns/OutlinerSimulatePhysicsColumn.h"
 
 #define LOCTEXT_NAMESPACE "FOutlinerToolkitModule"
@@ -97,23 +96,12 @@ void FOutlinerToolkitModule::InitCustomSceneOutlinerColumn()
 {
     FSceneOutlinerModule& SceneOutlinerModule = FModuleManager::LoadModuleChecked<FSceneOutlinerModule>("SceneOutliner");
 
-    //FSceneOutlinerColumnInfo RayTracingGroupIdColumnInfo(ESceneOutlinerColumnVisibility::Visible,
-    //    1,
-    //    FCreateSceneOutlinerColumn::CreateRaw(this, &FOutlinerToolkitModule::OnCreateGroupId));
-
-    //SceneOutlinerModule.RegisterDefaultColumnType<FOutlinerRTGroupIDColumn>(RayTracingGroupIdColumnInfo);
-
     FSceneOutlinerColumnInfo SimulatePhysicsColumnInfo(
         ESceneOutlinerColumnVisibility::Visible,
         2,
         FCreateSceneOutlinerColumn::CreateRaw(this, &FOutlinerToolkitModule::OnCreateSimulatePhysics)
     );
     SceneOutlinerModule.RegisterDefaultColumnType<FOutlinerSimulatePhysicsColumn>(SimulatePhysicsColumnInfo);
-}
-
-TSharedRef<ISceneOutlinerColumn> FOutlinerToolkitModule::OnCreateGroupId(ISceneOutliner& SceneOutliner)
-{
-    return MakeShareable(new FOutlinerRTGroupIDColumn(SceneOutliner));
 }
 
 TSharedRef<ISceneOutlinerColumn> FOutlinerToolkitModule::OnCreateSimulatePhysics(ISceneOutliner& SceneOutliner)
