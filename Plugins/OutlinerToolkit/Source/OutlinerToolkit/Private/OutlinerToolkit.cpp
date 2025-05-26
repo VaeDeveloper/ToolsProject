@@ -38,7 +38,7 @@ void FOutlinerToolkitModule::RegisterMenus()
         FUIAction(FSimpleDelegate::CreateRaw(this, &FOutlinerToolkitModule::EntryFunctionWithContext))
     );
 }
-
+// TODO !!! Test (create blueprint for outliner actors 
 void FOutlinerToolkitModule::EntryFunctionWithContext()
 {
     USelection* EngineSelection = GEditor->GetSelectedActors();
