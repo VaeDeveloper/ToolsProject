@@ -51,6 +51,7 @@ public class AssetCleaner : ModuleRules
 					"ContentBrowserData",
 					"EditorWidgets",
 					"EditorSubsystem",
+					"EditorStyle",
 					"AssetManagerEditor",
 					"SourceControl",
 					"EditorWidgets",
