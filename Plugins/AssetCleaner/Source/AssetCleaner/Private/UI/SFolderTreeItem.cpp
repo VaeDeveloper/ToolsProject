@@ -11,7 +11,6 @@ void SFolderItemTree::Construct(const FArguments& InArgs, const TSharedRef<STabl
 	SMultiColumnTableRow::Construct(SMultiColumnTableRow::FArguments().Padding(FMargin{ 0.0f, 2.0f, 0.0f, 0.0f }), InTable);
 }
 
-
 TSharedRef<SWidget> SFolderItemTree::GenerateWidgetForColumn(const FName& InColumnName) 
 {
 	if(InColumnName.IsEqual(TEXT("Path")))

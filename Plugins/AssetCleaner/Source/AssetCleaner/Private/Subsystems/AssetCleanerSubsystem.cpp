@@ -6,6 +6,7 @@
 #include "ContentBrowserModule.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "AssetManagerEditorModule.h"
 
 namespace AssetCleaner
 {
@@ -45,5 +46,13 @@ FContentBrowserModule& UAssetCleanerSubsystem::GetContentBrowserModule()
 FPropertyEditorModule& UAssetCleanerSubsystem::GetPropertyEditorModule()
 {
 	return FModuleManager::LoadModuleChecked<FPropertyEditorModule>(AssetCleaner::Constants::ModulePropertyEditor);
+}
+void UAssetCleanerSubsystem::ProcessAssetData(const TArray<FAssetData>& RefAssetData, TFunction<void(const TArray<FAssetIdentifier>&)> ProcessFunction)
+{
+
+	TArray<FAssetIdentifier> AssetIdentifiers;
+	IAssetManagerEditorModule::ExtractAssetIdentifiersFromAssetDataList(RefAssetData, AssetIdentifiers);
+	ProcessFunction(AssetIdentifiers);
+
 }
 #endif

@@ -11,6 +11,7 @@
 #include "AssetToolsModule.h"
 #include "AssetViewUtils.h"
 #include "StatusBarSubsystem.h"
+#include "Subsystems/AssetCleanerSubsystem.h"
 
 #define LOCTEXT_NAMESPACE "FAssetCleanerModule"
 /* clang-format off */
@@ -47,13 +48,15 @@ void FAssetCleanerModule::StartupModule()
 }
 TSharedRef<SDockTab> FAssetCleanerModule::CreateAssetCleanerTab(const FSpawnTabArgs& Args)
 {
+	FString Folder = SelectedFolderPaths.Num() > 0 ? SelectedFolderPaths[0] : TEXT("/Game");
+
 	return SNew(SDockTab)
 		.TabRole(ETabRole::NomadTab)
 		.Label(FText::FromString("Asset Cleaner"))
 		[
 			SNew(SAssetCleanerWidget)
-			.DiscoveredAssets(GetAllAssets(SelectedFolderPaths[0]))
-			.CurrentSelectedFolder(SelectedFolderPaths[0])
+			.DiscoveredAssets(GetAllAssets(Folder))
+			.CurrentSelectedFolder(Folder)
 		];
 }
 
@@ -64,14 +67,14 @@ TSharedRef<SDockTab> FAssetCleanerModule::CreateAssetCleanerTab(const TArray<TSh
 	if (StatusBarSubsystem)
 	{
 		TSharedRef<SWidget> StatusBarWidget = StatusBarSubsystem->MakeStatusBarWidget(FName("AssetCleanerStatusBar"), AssetCleanerTab);
-
+	
 		AssetCleanerTab->SetContent(
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
-			.FillHeight(1.0f) 
+			.FillHeight(1.0f)
 			[
 				SNew(SAssetCleanerWidget)
-					.CurrentSelectedFolder(Path)
+				.CurrentSelectedFolder(Path)
 			]
 			+ SVerticalBox::Slot()
 			.AutoHeight()
@@ -111,8 +114,8 @@ void FAssetCleanerModule::InitializeMenuExtention()
 {
 	if (FModuleManager::Get().IsModuleLoaded(AssetCleaner::CBModuleName))
 	{
-		FContentBrowserModule& CBModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>(AssetCleaner::CBModuleName);
-		TArray<FContentBrowserMenuExtender_SelectedPaths>& CBModuleMenuExtenders = CBModule.GetAllPathViewContextMenuExtenders();
+		// FContentBrowserModule& CBModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>(AssetCleaner::CBModuleName);
+		TArray<FContentBrowserMenuExtender_SelectedPaths>& CBModuleMenuExtenders = UAssetCleanerSubsystem::GetContentBrowserModule().GetAllPathViewContextMenuExtenders();
 		CBModuleMenuExtenders.Add(FContentBrowserMenuExtender_SelectedPaths::CreateRaw(this, &FAssetCleanerModule::CustomMenuExtender));
 	}
 	else

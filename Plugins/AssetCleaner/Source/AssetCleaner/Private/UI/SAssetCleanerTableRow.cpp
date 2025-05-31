@@ -3,7 +3,6 @@
 
 #include "UI/SAssetCleanerTableRow.h"
 
-
 void SAssetCleanerTableRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTable)
 {
 	Item = InArgs._Item;
@@ -29,7 +28,7 @@ SAssetCleanerTableRow::~SAssetCleanerTableRow()
 
 TSharedRef<SWidget> SAssetCleanerTableRow::GenerateWidgetForColumn(const FName& ColumnId)
 {
-	if(ColumnId == AssetCleanerListColumns::ColumnID_Name)
+	if(ColumnId.IsEqual(AssetCleanerListColumns::ColumnID_Name))
 	{
 		TSharedRef<SEditableText> EditableText =
 			SNew(SEditableText)
@@ -106,50 +105,35 @@ TSharedRef<SWidget> SAssetCleanerTableRow::GenerateWidgetForColumn(const FName& 
 				]
 			];
 	}
-	else if(ColumnId == AssetCleanerListColumns::ColumnID_Type)
+	else if(ColumnId.IsEqual(AssetCleanerListColumns::ColumnID_Type))
 	{
 		return SNew(STextBlock) // bug fix in 5.5 version GetClass() returned nullptr on some asset classes
 			.Text(FText::FromName(Item.IsValid() ? Item->AssetClassPath.GetAssetName() : NAME_None));
 	}
-	else if(ColumnId == AssetCleanerListColumns::ColumnID_DiskSize)
+	else if(ColumnId.IsEqual(AssetCleanerListColumns::ColumnID_DiskSize))
 	{
 		return SNew(STextBlock)
 			.Text(FText::FromString(AssetCleaner::Private::GetAssetDiskSize(Item.ToSharedRef().Get())));
 	}
-	else if(ColumnId == AssetCleanerListColumns::ColumnID_Path)
+	else if(ColumnId.IsEqual(AssetCleanerListColumns::ColumnID_Path))
 	{
 		return SNew(STextBlock)
 			.Text(FText::FromString(Item->PackageName.ToString()));
 	}
-	else if(ColumnId == AssetCleanerListColumns::ColumnID_RC)
+	else if(ColumnId.IsEqual(AssetCleanerListColumns::ColumnID_RC))
 	{
 		const FString AssetPath = FPackageName::LongPackageNameToFilename(Item->PackageName.ToString(), FPackageName::GetAssetPackageExtension());
 		FSourceControlStatePtr SourceControlState = ISourceControlModule::Get().GetProvider().GetState(AssetPath, EStateCacheUsage::Use);
-		const FSlateBrush* IconBrush = FAppStyle::GetBrush("SourceControl.Generic");
-		//TODO !!!
+		const FSlateBrush* IconBrush = FSlateIcon(FName("EditorStyle"), "SourceControl.Settings.StatusBorder").GetIcon();
+
 		if(SourceControlState.IsValid())
 		{
-			if(SourceControlState->IsCheckedOut())
-			{
-				IconBrush = FAppStyle::GetBrush("SourceControl.CheckedOut");
-			}
-			else if(SourceControlState->IsModified())
-			{
-				IconBrush = FAppStyle::GetBrush("SourceControl.Modified");
-			}
-			else if(SourceControlState->IsSourceControlled())
-			{
-				IconBrush = FAppStyle::GetBrush("SourceControl.CheckedIn");
-			}
-			else
-			{
-				IconBrush = FAppStyle::GetBrush("SourceControl.NotUnderSourceControl");
-			}
+			IconBrush = SourceControlState->GetIcon().GetIcon();
 		}
 
 		return SNew(SImage)
-			.Image(IconBrush)
-			.ColorAndOpacity(FColor::Transparent);
+			.Image(IconBrush);
+			//.ColorAndOpacity(FColor::Transparent);
 	}
 
 	return SNullWidget::NullWidget;

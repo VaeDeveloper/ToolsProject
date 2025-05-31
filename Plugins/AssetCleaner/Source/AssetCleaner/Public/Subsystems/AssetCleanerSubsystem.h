@@ -32,4 +32,17 @@ public:
 	static FContentBrowserModule& GetContentBrowserModule();
 	static FPropertyEditorModule& GetPropertyEditorModule();
 
+
+	/**
+	 * Processes asset data by converting it to asset identifiers and executing a callback.
+	 *
+	 * @param RefAssetData Array of asset data to process
+	 * @param ProcessFunction Callback function that receives processed asset identifiers
+	 *
+	 * @note Uses IAssetManagerEditorModule to extract identifiers from asset data
+	 * @see IAssetManagerEditorModule::ExtractAssetIdentifiersFromAssetDataList()
+	 */
+	static void ProcessAssetData(const TArray<FAssetData>& RefAssetData, TFunction<void(const TArray<FAssetIdentifier>&)> ProcessFunction);
+
+
 };

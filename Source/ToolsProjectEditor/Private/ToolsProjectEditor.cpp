@@ -132,13 +132,13 @@ void FToolsProjectEditor::FillManagementMenu(FMenuBuilder& MenuBuilder)
     MenuBuilder.AddMenuEntry(
         LOCTEXT("AssetCleanerPlugin", "Asset Cleaner Plugin"),
         LOCTEXT("AssetCleanerPlugin_Tooltip", "Open Asset Cleaner Plugin"),
-        FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.ReimportAsset"),
+        FSlateIcon(FName("EditorStyle"), "GraphEditor.Clean"),
         FUIAction(FExecuteAction::CreateLambda([] { ToolsProject::OpenModuleManagerTab<IAssetCleaner>("AssetCleaner"); })));
 
     MenuBuilder.AddMenuEntry(
         LOCTEXT("DataAssetManager", "Data Asset Manager Plugin"),
         LOCTEXT("DataAssetManagerTooltip", "Open Data Asset Manager Plugin"),
-        FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetTreeFolderOpen"),
+        FSlateIcon(FName("EditorStyle"), "ClassIcon.DataAsset"),
         FUIAction(FExecuteAction::CreateLambda([] () { ToolsProject::OpenModuleManagerTab<IDataAssetManagerModule>("DataAssetManager"); })));
 
     MenuBuilder.EndSection();
@@ -151,7 +151,7 @@ void FToolsProjectEditor::FillValidationMenu(FMenuBuilder& MenuBuilder)
     MenuBuilder.AddMenuEntry(
         LOCTEXT("ValidatorXPlugin", "ValidatorX"),
         LOCTEXT("ValidatorXPlugin_Tooltip", "Open ValidatorX Plugin"),
-        FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"),
+        FSlateIcon(FName("ControlRigEditorStyle"), "RigValidation.TabIcon"),
         FUIAction(FExecuteAction::CreateLambda([] () { ToolsProject::OpenModuleManagerTab<IValidatorXModule>("ValidatorX"); })));
 
     MenuBuilder.AddMenuEntry(
@@ -170,7 +170,7 @@ void FToolsProjectEditor::FillNotepadMenu(FMenuBuilder& MenuBuilder)
     MenuBuilder.AddMenuEntry(
         LOCTEXT("UNotepadPlugin", "UNotepad Plugin"),
         LOCTEXT("UNotepadPlugin_Tooltip", "Open UNotepad Plugin"),
-        FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"),
+        FSlateIcon(FName("PaperStyle"), "ClassIcon.PaperFlipbookComponent"),
         FUIAction(FExecuteAction::CreateLambda([] { ToolsProject::OpenModuleManagerTab<IUNotepadModule>("UNotepad"); })));
 
     MenuBuilder.EndSection();

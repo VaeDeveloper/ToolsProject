@@ -7,6 +7,20 @@
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Notifications/SProgressBar.h"
 
+
+
+namespace FolderItemTreeID
+{
+	/** IDs for list columns */
+	static const FName ColumnID_Path("Path");
+	static const FName ColumnID_NumAssetsTotal("NumAssetsTotal");
+	static const FName ColumnID_NumAssetsUsed("NumAssetsUsed");
+	static const FName ColumnID_NumAssetsUnused("NumAssetsUnused");
+	static const FName ColumnID_UnusedPercent("UnusedPercent");
+	static const FName ColumnID_UnusedSize("UnusedSize");
+
+}
+
 /**
  * A single row widget used to represent a folder item in an asset tree view.
  * Implements multi-column support for folder display within an STreeView.

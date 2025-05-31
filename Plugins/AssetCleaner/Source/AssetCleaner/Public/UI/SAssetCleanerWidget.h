@@ -7,6 +7,14 @@
 #include "Kismet2/KismetEditorUtilities.h"
 #include "ClassViewerFilter.h"
 #include "SAssetSearchBox.h"
+#include "AssetCleanerTypes.h"
+
+
+enum class EAssetCleanerViewMode : uint8
+{
+	AssetsAndFilters,
+	Statistics
+};
 
 /* clang-format off */
 namespace AssetCleaner
@@ -25,7 +33,6 @@ namespace AssetCleaner
 		constexpr const TCHAR* DataAssetManager = TEXT("DataAssetManager");
 		constexpr const TCHAR* PropertyEditor	= TEXT("PropertyEditor");
 	}
-
 
 	namespace Private
 	{
@@ -108,7 +115,8 @@ namespace AssetCleaner
 }
 
 
-class ASSETCLEANER_API SAssetCleanerWidget : public SCompoundWidget
+
+class ASSETCLEANER_API SAssetCleanerWidget final : public SCompoundWidget
 {
 	SLATE_BEGIN_ARGS(SAssetCleanerWidget) {}
 		SLATE_ARGUMENT(TArray<TSharedPtr<FAssetData>>, DiscoveredAssets)
@@ -117,10 +125,47 @@ class ASSETCLEANER_API SAssetCleanerWidget : public SCompoundWidget
 public:
 	void Construct(const FArguments& InArgs);
 
+	TSharedRef<ITableRow> OnTreeGenerateRow(TSharedPtr<FAssetTreeFolderNode> Item, const TSharedRef<STableViewBase>& OwnerTable) const;
 
-	
+	FText TreeSearchText;
+	TSharedPtr<FTabManager> TabManager;
+	TSharedRef<SDockTab> SpawnAssetsAndFiltersTab(const FSpawnTabArgs& SpawnTabArgs);
+
+	TSharedRef<SDockTab> SpawnStatisticsTab(const FSpawnTabArgs& SpawnTabArgs);
+
+	TSharedPtr<STreeView<TSharedPtr<FAssetTreeFolderNode>>> TreeListView;
+	TArray<TSharedPtr<FAssetTreeFolderNode>> TreeListItems;
+
+	TSharedPtr<FAssetTreeFolderNode> RootItem;
+
+	TSharedRef<SHeaderRow> GetTreeHeaderRow();
+	void OnTreeGetChildren(TSharedPtr<FAssetTreeFolderNode> Item, TArray<TSharedPtr<FAssetTreeFolderNode>>& OutChildren);
+	void OnTreeSelectionChanged(TSharedPtr<FAssetTreeFolderNode> Selection, ESelectInfo::Type SelectInfo);
+	void UpdateFolderTree();
+
+	void InitializeColumns();
+	TSet<FName> SelectedPaths;
+	FName LastSortedColumn;
+	EColumnSortMode::Type ColumnPathSortMode = EColumnSortMode::None;
+	EColumnSortMode::Type ColumnAssetsTotalSortMode = EColumnSortMode::None;
+	EColumnSortMode::Type ColumnAssetsUsedSortMode = EColumnSortMode::None;
+	EColumnSortMode::Type ColumnAssetsUnusedSortMode = EColumnSortMode::None;
+	EColumnSortMode::Type ColumnUnusedPercentSortMode = EColumnSortMode::None;
+	EColumnSortMode::Type ColumnUnusedSizeSortMode = EColumnSortMode::None;
+
+
+	void SortTreeItems(const bool UpdateSortingOrder);
+
+	bool TreeItemIsExpanded(const TSharedPtr<FAssetTreeFolderNode>& Item, const TSet<TSharedPtr<FAssetTreeFolderNode>>& CachedItems) const;
+
+	bool TreeItemContainsSearchText(const TSharedPtr<FAssetTreeFolderNode>& Item) const;
+	TSharedPtr<SWidget> GetTreeContextMenu();
+	void OnTreeExpansionChanged(TSharedPtr<FAssetTreeFolderNode> Item, bool bIsExpanded);
 private:
 	FSlateFontInfo GetWidgetTextFont() const;
+
+	const FMargin HeaderMargin{ 5.0f };
+
 
 	void InitializeColumnAdders(); 
 
@@ -140,7 +185,7 @@ private:
 	void OpenSelectedDataAssetInEditor();
 	void UpdateFilteredAssetList();
 	FReply HandleRowMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& MouseEvent);
-
+	TSharedRef<SWidget> GenerateColumnMenu();
 	void RegisterEditableText(TSharedPtr<FAssetData> AssetData, TSharedRef<SEditableText> EditableText);
 	FReply ColumnButtonClicked(const FGeometry& InGeometry, const FPointerEvent& MouseEvent);
 	TSharedPtr<class SLayeredImage> CreateFilterImage();
@@ -169,10 +214,8 @@ private:
 
 	void OnFilterChanged(const FString& FilterName, bool bIsEnabled);
 	void InitializeAdvancedFilters();
-	void CollectMetadataAssets();
 	void CollectTexturesWithoutCompression();
 	void CollectAssetsWithInvalidReferences();
-	void CollectTexturesWithWrongSize();
 	void CollectMaterialsInfoManyInstruction();
 	void CollectMaterialsInfoManyExpression();
 	void SubscribeToAssetRegistryEvent();
@@ -195,11 +238,19 @@ private:
 	TSet<FName> TexturesWithWrongSize;
 	TSet<FName> FilteredMaterials;
 
+	TSharedPtr<FTabManager::FLayout> TabLayout;
 
+	FName CurrentSortColumn = NAME_None;
+	EColumnSortMode::Type CurrentSortMode = EColumnSortMode::None;
 
+	EColumnSortMode::Type GetColumnSortMode(FName ColumnId) const;
+	void OnColumnSortModeChanged(EColumnSortPriority::Type SortPriority, const FName& ColumnId, EColumnSortMode::Type NewSortMode);
 
+	void SortAssetList();
 
+	TSharedRef<SWidget> CreateStatisticsLayout();
 
+	EAssetCleanerViewMode CurrentViewMode = EAssetCleanerViewMode::AssetsAndFilters;
 	/** 
 	 * Delegate handle for the OnFilesLoaded event subscription.
 	 * Used to safely unsubscribe when the widget is destroyed.

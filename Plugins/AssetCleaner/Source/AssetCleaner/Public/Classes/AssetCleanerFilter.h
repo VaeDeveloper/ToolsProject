@@ -4,9 +4,6 @@
 
 #include "CoreMinimal.h"
 
-
-
-
 namespace AssetCleaner
 {
 	class IAssetFilter
@@ -22,8 +19,8 @@ namespace AssetCleaner
 	class FLambdaAssetFilter : public IAssetFilter
 	{
 	public:
-		FLambdaAssetFilter(const FString& InName, TFunctionRef<bool(const FAssetData&)> InPredicate)
-			: Name(InName), Predicate(InPredicate)
+		FLambdaAssetFilter(const FString& InName, const FString& InTooltip, TFunctionRef<bool(const FAssetData&)> InPredicate)
+			: Name(InName), Tooltip(InTooltip), Predicate(InPredicate)
 		{
 		}
 
