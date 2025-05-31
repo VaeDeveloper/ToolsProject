@@ -66,10 +66,8 @@ namespace AssetCleaner
 	static constexpr const TCHAR* TitleTextColor = TEXT("2A6FFFFF");
 
 	static constexpr int32 MaxNameLength = 64;
-	static FAssetCleanerModule& GetAssetCleanerModule()
-	{
-		return FModuleManager::LoadModuleChecked<FAssetCleanerModule>(AssetCleanerModuleName);
-	}
+
+
 
 	namespace IconStyle
 	{
@@ -84,7 +82,6 @@ namespace AssetCleaner
 		const FSlateIcon SaveAsset = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.SaveAllCurrentFolder");
 		const FSlateIcon SaveAll = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.SaveAllCurrentFolder");
 		const FSlateIcon Validate = FSlateIcon(IconStyle::AppStyle, "Icons.Adjust");
-
 		// Assets Menu
 		const FSlateIcon OpenAsset = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.ShowInExplorer");
 		const FSlateIcon FindInCB = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.ShowInExplorer");
@@ -237,10 +234,8 @@ namespace AssetCleaner
 		{
 			if(InPath.IsEmpty()) return false;
 
-			const FName PathRel = FName{ *PathConvertToRelative(InPath) };
-			const auto& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-
-			if(const bool HasAsset = AssetRegistry.Get().HasAssets(PathRel, true))
+			const FName PathRel = FName(*PathConvertToRelative(InPath));
+			if(const bool HasAsset = UAssetCleanerSubsystem::GetAssetRegistryModule().Get().HasAssets(PathRel, true))
 			{
 				return false;
 			}
@@ -546,8 +541,8 @@ void SAssetCleanerWidget::OnFilterChanged(const FString& FilterName, bool bIsEna
 bool SAssetCleanerWidget::TreeItemContainsSearchText(const TSharedPtr<FAssetTreeFolderNode>& Item) const
 {
 	TArray<FString> SubPaths;
-	const auto& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-	AssetRegistry.Get().GetSubPaths(Item->FolderPath, SubPaths, true);
+	//const auto& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	UAssetCleanerSubsystem::GetAssetRegistryModule().Get().GetSubPaths(Item->FolderPath, SubPaths, true);
 
 	for(const auto& Path : SubPaths)
 	{
@@ -882,7 +877,7 @@ TSharedRef<SDockTab> SAssetCleanerWidget::SpawnStatisticsTab(const FSpawnTabArgs
 
 void SAssetCleanerWidget::SubscribeToAssetRegistryEvent()
 {
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(AssetCleaner::ModuleName::AssetRegistry);
+	FAssetRegistryModule& AssetRegistryModule = UAssetCleanerSubsystem::GetAssetRegistryModule();//FModuleManager::LoadModuleChecked<FAssetRegistryModule>(AssetCleaner::ModuleName::AssetRegistry);
 
 	const auto SubscribeDelegates = [this, &AssetRegistryModule] ()
 		{
@@ -1044,7 +1039,7 @@ void SAssetCleanerWidget::InitializeAssetTypeComboBox(TArray<TSharedPtr<FAssetDa
 
 bool SAssetCleanerWidget::HasCycle(const FAssetData& Asset)
 {
-	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
+	IAssetRegistry& AssetRegistry = UAssetCleanerSubsystem::GetAssetRegistryModule().Get();
 	const FAssetIdentifier StartId(Asset.PackageName);
 
 	TSet<FAssetIdentifier> TempVisited;
@@ -1129,7 +1124,7 @@ void SAssetCleanerWidget::CollectAssetsWithInvalidReferences()
 	FScopedSlowTask SlowTask(StoredAssetList.Num(), FText::FromString(TEXT("Checking assets for invalid references...")));
 	SlowTask.MakeDialog(true);
 
-	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
+	IAssetRegistry& AssetRegistry = UAssetCleanerSubsystem::GetAssetRegistryModule().Get();
 
 	for(const TSharedPtr<FAssetData>& Asset : StoredAssetList)
 	{
@@ -1348,7 +1343,7 @@ void SAssetCleanerWidget::CollectTexturesWithoutCompression()
 {
 	TexturesWithoutCompression.Empty();
 
-	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
+	IAssetRegistry& AssetRegistry = UAssetCleanerSubsystem::GetAssetRegistryModule().Get();
 	FTopLevelAssetPath TextureClassPath(TEXT("/Script/Engine.Texture2D"));
 
 	TArray<FAssetData> AllTextures;
@@ -1608,9 +1603,9 @@ void SAssetCleanerWidget::LoadAssets()
 		return;
 	}
 
-	const FAssetRegistryModule& AssetRegistryModule =
-		FModuleManager::GetModuleChecked<FAssetRegistryModule>(AssetCleaner::ModuleName::AssetRegistry);
-	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+	//const FAssetRegistryModule& AssetRegistryModule =
+	//	FModuleManager::GetModuleChecked<FAssetRegistryModule>(AssetCleaner::ModuleName::AssetRegistry);
+	IAssetRegistry& AssetRegistry = UAssetCleanerSubsystem::GetAssetRegistryModule().Get();
 
 	FString RelativePath = SelectedDirectory;
 	TArray<FAssetData> AssetDataArray;
@@ -2333,8 +2328,8 @@ void SAssetCleanerWidget::SaveAsset()
 
 	AssetObject->MarkPackageDirty();
 
-	const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-	AssetRegistryModule.Get().AssetCreated(AssetObject);
+//	const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	UAssetCleanerSubsystem::GetAssetRegistryModule().Get().AssetCreated(AssetObject);
 
 	UPackage* AssetPackage = AssetObject->GetOutermost();
 	if(!IsValid(AssetPackage)) return;

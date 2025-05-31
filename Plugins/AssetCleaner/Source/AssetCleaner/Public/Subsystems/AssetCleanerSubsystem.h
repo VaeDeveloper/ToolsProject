@@ -11,7 +11,7 @@ class FAssetToolsModule;
 class FAssetRegistryModule;
 class FContentBrowserModule;
 class FPropertyEditorModule;
-
+class FAssetCleanerModule;
 /**
  * 
  */
@@ -31,8 +31,8 @@ public:
 	static FAssetRegistryModule& GetAssetRegistryModule();
 	static FContentBrowserModule& GetContentBrowserModule();
 	static FPropertyEditorModule& GetPropertyEditorModule();
-
-
+	static FAssetCleanerModule& GetAssetCleanerModule();
+	
 	/**
 	 * Processes asset data by converting it to asset identifiers and executing a callback.
 	 *

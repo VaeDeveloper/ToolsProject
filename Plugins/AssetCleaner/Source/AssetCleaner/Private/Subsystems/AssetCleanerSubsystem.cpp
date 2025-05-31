@@ -7,6 +7,7 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "AssetManagerEditorModule.h"
+#include "AssetCleaner.h"
 
 namespace AssetCleaner
 {
@@ -18,6 +19,7 @@ namespace AssetCleaner
 		static const FName ModuleContentBrowser{ TEXT("ContentBrowser") };
 		static const FName ModulePropertyEditor{ TEXT("PropertyEditor") };
 		static const FName ModuleMegascans{ TEXT("MegascansPlugin") };
+		static const FName ModuleAssetCleaner{ TEXT("AssetCleaner") };
 	}
 }
 
@@ -46,6 +48,10 @@ FContentBrowserModule& UAssetCleanerSubsystem::GetContentBrowserModule()
 FPropertyEditorModule& UAssetCleanerSubsystem::GetPropertyEditorModule()
 {
 	return FModuleManager::LoadModuleChecked<FPropertyEditorModule>(AssetCleaner::Constants::ModulePropertyEditor);
+}
+FAssetCleanerModule& UAssetCleanerSubsystem::GetAssetCleanerModule()
+{
+	return FModuleManager::LoadModuleChecked<FAssetCleanerModule>(AssetCleaner::Constants::ModuleAssetCleaner);
 }
 void UAssetCleanerSubsystem::ProcessAssetData(const TArray<FAssetData>& RefAssetData, TFunction<void(const TArray<FAssetIdentifier>&)> ProcessFunction)
 {
