@@ -105,8 +105,6 @@ namespace AssetCleaner
 
 	namespace Private
 	{
-
-
 		int64 ParseSizeString(const FString& SizeString)
 		{
 			FString NumberPart, UnitPart;

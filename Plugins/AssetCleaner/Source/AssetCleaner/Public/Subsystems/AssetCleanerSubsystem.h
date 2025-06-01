@@ -55,6 +55,15 @@ public:
 	 */
 	static bool IsExcludedFolder(const FString& FolderPath);
 
+	/**
+	 * Deletes multiple assets from the content browser.
+	 *
+	 * Uses the ObjectTools utility to delete the specified assets and logs the result.
+	 * If no assets are provided, logs a warning and returns false.
+	 *
+	 * @param Assets The array of FAssetData objects representing the assets to delete.
+	 * @return true if at least one asset was successfully deleted; false otherwise.
+	 */
 	static bool DeleteMultiplyAsset(const TArray<FAssetData>& Assets);
 
 
