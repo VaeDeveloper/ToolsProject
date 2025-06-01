@@ -8,6 +8,10 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "AssetManagerEditorModule.h"
 #include "AssetCleaner.h"
+#include "ObjectTools.h"
+
+
+DEFINE_LOG_CATEGORY_STATIC(AssetCleanerSubsystemLog, All, All);
 
 namespace AssetCleaner
 {
@@ -60,5 +64,26 @@ void UAssetCleanerSubsystem::ProcessAssetData(const TArray<FAssetData>& RefAsset
 	IAssetManagerEditorModule::ExtractAssetIdentifiersFromAssetDataList(RefAssetData, AssetIdentifiers);
 	ProcessFunction(AssetIdentifiers);
 
+}
+bool UAssetCleanerSubsystem::IsExcludedFolder(const FString& FolderPath)
+{
+	return FolderPath.Contains(TEXT("Developers"))
+		|| FolderPath.Contains(TEXT("Collections"))
+		|| FolderPath.Contains(TEXT("__ExternalActors__"))
+		|| FolderPath.Contains(TEXT("__ExternalObjects__"));
+	
+}
+bool UAssetCleanerSubsystem::DeleteMultiplyAsset(const TArray<FAssetData>& Assets)
+{
+	if(Assets.Num() == 0)
+	{
+		UE_LOG(AssetCleanerSubsystemLog, Warning, TEXT("%s No assets to delete!"), *FString(__FUNCTION__));
+		return false;
+	}
+
+	int32 DeletedCount = ObjectTools::DeleteAssets(Assets);
+	UE_LOG(AssetCleanerSubsystemLog, Log, TEXT("%s Deleted %d assets"), *FString(__FUNCTION__), DeletedCount);
+
+	return DeletedCount > 0;
 }
 #endif

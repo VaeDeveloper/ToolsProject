@@ -17,7 +17,7 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetRegistry/IAssetRegistry.h"
 #include "Widgets/Input/SSearchBox.h"
-#include "ObjectTools.h"
+//#include "ObjectTools.h"
 #include "AssetManagerEditorModule.h"
 #include "ContentBrowserModule.h"
 #include "HAL/PlatformApplicationMisc.h"
@@ -105,29 +105,6 @@ namespace AssetCleaner
 
 	namespace Private
 	{
-		static bool DeleteMultiplyAsset(const TArray<FAssetData>& Assets)
-		{
-			if(Assets.Num() == 0)
-			{
-				UE_LOG(SAssetCleanerTableRowLog, Warning, TEXT("%s No assets to delete!"), *FString(__FUNCTION__));
-				return false;
-			}
-
-			int32 DeletedCount = ObjectTools::DeleteAssets(Assets);
-			UE_LOG(SAssetCleanerTableRowLog, Log, TEXT("%s Deleted %d assets"), *FString(__FUNCTION__), DeletedCount);
-
-			return DeletedCount > 0;
-		}
-
-		
-
-		static bool IsExcludedFolder(const FString& FolderPath)
-		{
-			return FolderPath.Contains(TEXT("Developers"))
-				|| FolderPath.Contains(TEXT("Collections"))
-				|| FolderPath.Contains(TEXT("__ExternalActors__"))
-				|| FolderPath.Contains(TEXT("__ExternalObjects__"));
-		}
 
 
 		int64 ParseSizeString(const FString& SizeString)
@@ -1624,7 +1601,7 @@ void SAssetCleanerWidget::LoadAssets()
 	for(const FAssetData& AssetData : AssetDataArray)
 	{
 		const FString AssetPath = AssetData.PackagePath.ToString();
-		if(!AssetCleaner::Private::IsExcludedFolder(AssetPath))
+		if(!UAssetCleanerSubsystem::IsExcludedFolder(AssetPath))
 		{
 			StoredAssetList.Add(MakeShared<FAssetData>(AssetData));
 		}
@@ -2437,7 +2414,7 @@ void SAssetCleanerWidget::DeleteAsset()
 	bCanRename = false;
 	if(AssetsToDelete.Num() > 0)
 	{
-		AssetCleaner::Private::DeleteMultiplyAsset(AssetsToDelete);
+		UAssetCleanerSubsystem::DeleteMultiplyAsset(AssetsToDelete);
 	}
 }
 
