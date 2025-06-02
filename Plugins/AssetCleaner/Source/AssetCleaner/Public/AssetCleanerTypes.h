@@ -54,8 +54,10 @@ namespace AssetCleaner
 	}
 
 
+	static const FName PathDevelopers{ TEXT("/Game/Developers") };
+	static const FName PathRoot{ TEXT("/Game") };
 
-	static FName PathRoot{ TEXT("/Game") };
+	static constexpr int32 MaxNameLength = 64;
 }
 
 
