@@ -23,90 +23,90 @@
 void FOutlinerToolkitModule::StartupModule()
 {
 	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FOutlinerToolkitModule::RegisterMenus));
-    InitCustomSceneOutlinerColumn();
+	InitCustomSceneOutlinerColumn();
 }
 
 void FOutlinerToolkitModule::RegisterMenus()
 {
-    UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.ActorContextMenu");
-    FToolMenuSection& Section = Menu->FindOrAddSection("Toolset");
-    Section.AddMenuEntry(
-        "CreateBlueprintEntry", 
-        LOCTEXT("CreateBlueprintLabel", "Create Blueprint"),  
-        LOCTEXT("CreateBlueprintTooltip", "Create a Blueprint from the selected Actor"),  
-        FSlateIcon(),
-        FUIAction(FSimpleDelegate::CreateRaw(this, &FOutlinerToolkitModule::EntryFunctionWithContext))
-    );
+	UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.ActorContextMenu");
+	FToolMenuSection& Section = Menu->FindOrAddSection("Toolset");
+	Section.AddMenuEntry(
+		"CreateBlueprintEntry",
+		LOCTEXT("CreateBlueprintLabel", "Create Blueprint"),
+		LOCTEXT("CreateBlueprintTooltip", "Create a Blueprint from the selected Actor"),
+		FSlateIcon(),
+		FUIAction(FSimpleDelegate::CreateRaw(this, &FOutlinerToolkitModule::EntryFunctionWithContext))
+	);
 }
 // TODO !!! Test (create blueprint for outliner actors 
 void FOutlinerToolkitModule::EntryFunctionWithContext()
 {
-    USelection* EngineSelection = GEditor->GetSelectedActors();
-    if(!EngineSelection || EngineSelection->Num() == 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No actors selected."));
-        return;
-    }
+	USelection* EngineSelection = GEditor->GetSelectedActors();
+	if(!EngineSelection || EngineSelection->Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No actors selected."));
+		return;
+	}
 
-    FString PackageName = TEXT("/Game/GeneratedBP");
-    FString AssetName = TEXT("MyGeneratedBlueprint");
+	FString PackageName = TEXT("/Game/GeneratedBP");
+	FString AssetName = TEXT("MyGeneratedBlueprint");
 
-    FString FinalPackageName;
-    FAssetToolsModule& AssetToolsModule = FAssetToolsModule::GetModule();
-    AssetToolsModule.Get().CreateUniqueAssetName(PackageName, TEXT(""), FinalPackageName, AssetName);
+	FString FinalPackageName;
+	FAssetToolsModule& AssetToolsModule = FAssetToolsModule::GetModule();
+	AssetToolsModule.Get().CreateUniqueAssetName(PackageName, TEXT(""), FinalPackageName, AssetName);
 
-    UPackage* Package = CreatePackage(*FinalPackageName);
+	UPackage* Package = CreatePackage(*FinalPackageName);
 
-    
-    UBlueprint* Blueprint = FKismetEditorUtilities::CreateBlueprint(AActor::StaticClass(), Package, FName(*AssetName), BPTYPE_Normal, UBlueprint::StaticClass(), UBlueprintGeneratedClass::StaticClass(), FName("CreateBlueprintFromActors"));
 
-    if(!Blueprint)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create Blueprint."));
-        return;
-    }
+	UBlueprint* Blueprint = FKismetEditorUtilities::CreateBlueprint(AActor::StaticClass(), Package, FName(*AssetName), BPTYPE_Normal, UBlueprint::StaticClass(), UBlueprintGeneratedClass::StaticClass(), FName("CreateBlueprintFromActors"));
 
-    for(FSelectionIterator It(*EngineSelection); It; ++It)
-    {
-        if(AActor* Actor = Cast<AActor>(*It))
-        {
-            TArray<UActorComponent*> Components = Actor->GetComponents().Array();
-            for(UActorComponent* Component : Components)
-            {
-                if(USceneComponent* SceneComp = Cast<USceneComponent>(Component))
-                {
-                    FKismetEditorUtilities::AddComponentsToBlueprint(Blueprint, { SceneComp });
-                }
-            }
-        }
-    }
+	if(!Blueprint)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create Blueprint."));
+		return;
+	}
 
-    FAssetRegistryModule::AssetCreated(Blueprint);
-    Blueprint->MarkPackageDirty();
+	for(FSelectionIterator It(*EngineSelection); It; ++It)
+	{
+		if(AActor* Actor = Cast<AActor>(*It))
+		{
+			TArray<UActorComponent*> Components = Actor->GetComponents().Array();
+			for(UActorComponent* Component : Components)
+			{
+				if(USceneComponent* SceneComp = Cast<USceneComponent>(Component))
+				{
+					FKismetEditorUtilities::AddComponentsToBlueprint(Blueprint, { SceneComp });
+				}
+			}
+		}
+	}
 
-    FString PackageFileName = FPackageName::LongPackageNameToFilename(FinalPackageName, FPackageName::GetAssetPackageExtension());
-    UPackage::SavePackage(Package, Blueprint, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *PackageFileName);
+	FAssetRegistryModule::AssetCreated(Blueprint);
+	Blueprint->MarkPackageDirty();
 
-    GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(Blueprint);
-    UE_LOG(LogTemp, Log, TEXT("Blueprint '%s' created successfully."), *AssetName);
+	FString PackageFileName = FPackageName::LongPackageNameToFilename(FinalPackageName, FPackageName::GetAssetPackageExtension());
+	UPackage::SavePackage(Package, Blueprint, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *PackageFileName);
+
+	GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(Blueprint);
+	UE_LOG(LogTemp, Log, TEXT("Blueprint '%s' created successfully."), *AssetName);
 
 }
 
 void FOutlinerToolkitModule::InitCustomSceneOutlinerColumn()
 {
-    FSceneOutlinerModule& SceneOutlinerModule = FModuleManager::LoadModuleChecked<FSceneOutlinerModule>("SceneOutliner");
+	FSceneOutlinerModule& SceneOutlinerModule = FModuleManager::LoadModuleChecked<FSceneOutlinerModule>("SceneOutliner");
 
-    FSceneOutlinerColumnInfo SimulatePhysicsColumnInfo(
-        ESceneOutlinerColumnVisibility::Visible,
-        2,
-        FCreateSceneOutlinerColumn::CreateRaw(this, &FOutlinerToolkitModule::OnCreateSimulatePhysics)
-    );
-    SceneOutlinerModule.RegisterDefaultColumnType<FOutlinerSimulatePhysicsColumn>(SimulatePhysicsColumnInfo);
+	FSceneOutlinerColumnInfo SimulatePhysicsColumnInfo(
+		ESceneOutlinerColumnVisibility::Visible,
+		2,
+		FCreateSceneOutlinerColumn::CreateRaw(this, &FOutlinerToolkitModule::OnCreateSimulatePhysics)
+	);
+	SceneOutlinerModule.RegisterDefaultColumnType<FOutlinerSimulatePhysicsColumn>(SimulatePhysicsColumnInfo);
 }
 
 TSharedRef<ISceneOutlinerColumn> FOutlinerToolkitModule::OnCreateSimulatePhysics(ISceneOutliner& SceneOutliner)
 {
-    return MakeShareable(new FOutlinerSimulatePhysicsColumn(SceneOutliner));
+	return MakeShareable(new FOutlinerSimulatePhysicsColumn(SceneOutliner));
 }
 
 void FOutlinerToolkitModule::ShutdownModule()
@@ -115,5 +115,5 @@ void FOutlinerToolkitModule::ShutdownModule()
 }
 
 #undef LOCTEXT_NAMESPACE
-	
+
 IMPLEMENT_MODULE(FOutlinerToolkitModule, OutlinerToolkit)
