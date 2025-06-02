@@ -3,7 +3,7 @@
 
 #include "UI/SAssetCleanerWidget.h"
 #include "AssetCleaner.h"
-#include "RevisionControlStyle/RevisionControlStyle.h"
+
 #include "ISourceControlModule.h"
 #include "ISourceControlProvider.h"
 #include "SourceControlHelpers.h"
@@ -35,198 +35,13 @@
 #include "Libraries/AssetFilterLibrary.h"
 #include "Subsystems/AssetCleanerSubsystem.h"
 #include "UI/SFolderTreeItem.h"
+#include "AssetCleanerTypes.h"
 
 DEFINE_LOG_CATEGORY_STATIC(SAssetCleanerWidgetLog, All, All)
 DEFINE_LOG_CATEGORY_STATIC(SAssetCleanerTableRowLog, All, All)
 DEFINE_LOG_CATEGORY_STATIC(SFilterContainerWidgetLog, All, All)
 
 #define LOCTEXT_NAMESPACE "SAssetCleanerWidget"
-
-namespace AssetCleaner
-{
-	struct FAssetLists
-	{
-		static const FName AllAssets;
-		static const FName UnusedAssets;
-		static const FName DuplicateNameAssets;
-	};
-
-	const FName FAssetLists::AllAssets = TEXT("All Available Assets");
-	const FName FAssetLists::UnusedAssets = TEXT("Unused Assets");
-	const FName FAssetLists::DuplicateNameAssets = TEXT("Asset with duplicate name");
-
-
-	FName AssetCleanerModuleName = TEXT("AssetCleaner");
-
-	static FName PathRoot{ TEXT("/Game") };
-	static FName PathDevelopers{ TEXT("/Game/Developers") };
-
-
-	static constexpr float TitleInfoFontTextSize = 15.0f;
-	static constexpr const TCHAR* TitleTextColor = TEXT("2A6FFFFF");
-
-	static constexpr int32 MaxNameLength = 64;
-
-
-
-	namespace IconStyle
-	{
-		static const FName AppStyle = FAppStyle::GetAppStyleSetName();
-		static const FName RevisionControlStyle = FRevisionControlStyleManager::GetStyleSetName();
-	}
-
-	namespace Icons
-	{
-		// File Menu
-		const FSlateIcon AddNewAsset = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.AssetActions.ReimportAsset");
-		const FSlateIcon SaveAsset = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.SaveAllCurrentFolder");
-		const FSlateIcon SaveAll = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.SaveAllCurrentFolder");
-		const FSlateIcon Validate = FSlateIcon(IconStyle::AppStyle, "Icons.Adjust");
-		// Assets Menu
-		const FSlateIcon OpenAsset = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.ShowInExplorer");
-		const FSlateIcon FindInCB = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.ShowInExplorer");
-		const FSlateIcon Copy = FSlateIcon(IconStyle::AppStyle, "GenericCommands.Copy");
-		const FSlateIcon ReferenceViewer = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.ReferenceViewer");
-		const FSlateIcon SizeMap = FSlateIcon(IconStyle::AppStyle, "ContentBrowser.SizeMap");
-		const FSlateIcon Audit = FSlateIcon(IconStyle::AppStyle, "Icons.Audit");
-		const FSlateIcon RevisionControl = FSlateIcon(IconStyle::RevisionControlStyle, "RevisionControl.Actions.Diff");
-		const FSlateIcon Duplicate = FSlateIcon(IconStyle::AppStyle, "Icons.Duplicate");
-		const FSlateIcon Edit = FSlateIcon(IconStyle::AppStyle, "Icons.Edit");
-		// Settings Menu
-		const FSlateIcon MessageLog = FSlateIcon(IconStyle::AppStyle, "MessageLog.TabIcon");
-		const FSlateIcon Visibility = FSlateIcon(IconStyle::AppStyle, "Icons.Visibility");
-		const FSlateIcon Settings = FSlateIcon(IconStyle::AppStyle, "Icons.Settings");
-		const FSlateIcon Refresh = FSlateIcon(IconStyle::AppStyle, "Icons.Refresh");
-		const FSlateIcon OutputLog = FSlateIcon(FAppStyle::GetAppStyleSetName(), "Log.TabIcon");
-
-		// Help Menu
-		const FSlateIcon Documentation = FSlateIcon(IconStyle::AppStyle, "GraphEditor.GoToDocumentation");
-	}
-
-	namespace Private
-	{
-		int64 ParseSizeString(const FString& SizeString)
-		{
-			FString NumberPart, UnitPart;
-			SizeString.TrimStartAndEnd().Split(TEXT(" "), &NumberPart, &UnitPart);
-
-			double Number = FCString::Atod(*NumberPart);
-			int64 Multiplier = 1;
-
-			if(UnitPart.Equals(TEXT("KB"), ESearchCase::IgnoreCase))      Multiplier = 1024;
-			else if(UnitPart.Equals(TEXT("MB"), ESearchCase::IgnoreCase)) Multiplier = 1024 * 1024;
-			else if(UnitPart.Equals(TEXT("GB"), ESearchCase::IgnoreCase)) Multiplier = 1024LL * 1024 * 1024;
-
-			return static_cast<int64>(Number * Multiplier);
-		}
-
-		FString PathNormalize(const FString& InPath)
-		{
-			if(InPath.IsEmpty()) return {};
-
-			// Ensure the path dont starts with a slash or a disk drive letter
-			if(!(InPath.StartsWith(TEXT("/")) || InPath.StartsWith(TEXT("\\")) || (InPath.Len() > 2 && InPath[1] == ':')))
-			{
-				return {};
-			}
-
-			FString Path = FPaths::ConvertRelativePathToFull(InPath).TrimStartAndEnd();
-			FPaths::RemoveDuplicateSlashes(Path);
-
-			// Collapse any ".." or "." references in the path
-			FPaths::CollapseRelativeDirectories(Path);
-
-			if(FPaths::GetExtension(Path).IsEmpty())
-			{
-				FPaths::NormalizeDirectoryName(Path);
-			}
-			else
-			{
-				FPaths::NormalizeFilename(Path);
-			}
-
-			// Ensure the path does not end with a trailing slash
-			if(Path.EndsWith(TEXT("/")) || Path.EndsWith(TEXT("\\")))
-			{
-				Path = Path.LeftChop(1);
-			}
-
-			return Path;
-		}
-
-		FString PathConvertToRelative(const FString& InPath)
-		{
-			const FString PathNormalized = PathNormalize(InPath);
-			const FString PathProjectContent = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()).LeftChop(1);
-
-			if(PathNormalized.IsEmpty()) return {};
-			if(PathNormalized.StartsWith(AssetCleaner::PathRoot.ToString())) return PathNormalized;
-			if(PathNormalized.StartsWith(PathProjectContent))
-			{
-				FString Path = PathNormalized;
-				Path.RemoveFromStart(PathProjectContent);
-
-				return Path.IsEmpty() ? AssetCleaner::PathRoot.ToString() : AssetCleaner::PathRoot.ToString() / Path;
-			}
-
-			return {};
-		}
-
-		FString GetPathExternalActors()
-		{
-			return FString::Printf(TEXT("/Game/%s"), FPackagePath::GetExternalActorsFolderName());
-		}
-
-		FString GetPathExternalObjects()
-		{
-			return FString::Printf(TEXT("/Game/%s"), FPackagePath::GetExternalObjectsFolderName());
-		}
-
-		bool FolderIsExternal(const FString& InPath)
-		{
-			return InPath.StartsWith(GetPathExternalActors()) || InPath.StartsWith(GetPathExternalObjects());
-		}
-
-		FString PathConvertToAbsolute(const FString& InPath)
-		{
-			const FString PathNormalized = PathNormalize(InPath);
-			const FString PathProjectContent = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir()).LeftChop(1);
-
-			if(PathNormalized.IsEmpty()) return {};
-			if(PathNormalized.StartsWith(PathProjectContent)) return PathNormalized;
-			if(PathNormalized.StartsWith(AssetCleaner::PathRoot.ToString()))
-			{
-				FString Path = PathNormalized;
-				Path.RemoveFromStart(AssetCleaner::PathRoot.ToString());
-
-				return Path.IsEmpty() ? PathProjectContent : PathProjectContent / Path;
-			}
-
-			return {};
-		}
-
-		bool FolderIsEmpty(const FString& InPath)
-		{
-			if(InPath.IsEmpty()) return false;
-
-			const FName PathRel = FName(*PathConvertToRelative(InPath));
-			if(const bool HasAsset = UAssetCleanerSubsystem::GetAssetRegistryModule().Get().HasAssets(PathRel, true))
-			{
-				return false;
-			}
-
-			const FString PathAbs = PathConvertToAbsolute(InPath);
-			if(PathAbs.IsEmpty()) return false;
-
-			TArray<FString> Files;
-			IFileManager::Get().FindFilesRecursive(Files, *PathAbs, TEXT("*"), true, false);
-
-			return Files.Num() == 0;
-		}
-	}
-}
-
-
 
 void SAssetCleanerWidget::Construct(const FArguments& InArgs)
 {
@@ -516,9 +331,7 @@ void SAssetCleanerWidget::OnFilterChanged(const FString& FilterName, bool bIsEna
 bool SAssetCleanerWidget::TreeItemContainsSearchText(const TSharedPtr<FAssetTreeFolderNode>& Item) const
 {
 	TArray<FString> SubPaths;
-	//const auto& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	UAssetCleanerSubsystem::GetAssetRegistryModule().Get().GetSubPaths(Item->FolderPath, SubPaths, true);
-
 	for(const auto& Path : SubPaths)
 	{
 		if(Path.Contains(TreeSearchText.ToString()))
@@ -580,7 +393,6 @@ void SAssetCleanerWidget::OnTreeExpansionChanged(TSharedPtr<FAssetTreeFolderNode
 	TreeListView->RebuildList();
 }
 
-
 void SAssetCleanerWidget::UpdateFolderTree()
 {
 	if(!TreeListView.IsValid()) return;
@@ -631,7 +443,7 @@ void SAssetCleanerWidget::UpdateFolderTree()
 
 		for( const auto& SubPath : SubPaths)
 		{
-			if(AssetCleaner::Private::FolderIsExternal(SubPath)) continue;
+			if(UAssetCleanerSubsystem::FolderIsExternal(SubPath)) continue;
 
 			const TSharedPtr<FAssetTreeFolderNode> SubItem = MakeShareable(new FAssetTreeFolderNode);
 			if(!SubItem.IsValid()) continue;
@@ -640,7 +452,7 @@ void SAssetCleanerWidget::UpdateFolderTree()
 			SubItem->FolderName = FPaths::GetPathLeaf(SubItem->FolderPath);
 			SubItem->bIsDev = SubItem->FolderPath.StartsWith(AssetCleaner::PathDevelopers.ToString());
 			SubItem->bIsRoot = false;
-			SubItem->bIsEmpty = AssetCleaner::Private::FolderIsEmpty(SubItem->FolderPath);
+			SubItem->bIsEmpty = UAssetCleanerSubsystem::FolderIsEmpty(SubItem->FolderPath);
 			//SubItem->bIsExcluded = AssetCleaner::Private::FolderIsExcluded(SubItem->FolderPath);
 			//SubItem->NumAssetsTotal = MapNumAssetsAllByPath.Contains(SubItem->FolderPath) ? MapNumAssetsAllByPath[SubItem->FolderPath] : 0;
 			//SubItem->NumAssetsUsed = MapNumAssetsUsedByPath.Contains(SubItem->FolderPath) ? MapNumAssetsUsedByPath[SubItem->FolderPath] : 0;
@@ -1578,10 +1390,7 @@ void SAssetCleanerWidget::LoadAssets()
 		return;
 	}
 
-	//const FAssetRegistryModule& AssetRegistryModule =
-	//	FModuleManager::GetModuleChecked<FAssetRegistryModule>(AssetCleaner::ModuleName::AssetRegistry);
 	IAssetRegistry& AssetRegistry = UAssetCleanerSubsystem::GetAssetRegistryModule().Get();
-
 	FString RelativePath = SelectedDirectory;
 	TArray<FAssetData> AssetDataArray;
 	FName PathName(*RelativePath);
@@ -1660,7 +1469,7 @@ void SAssetCleanerWidget::UpdateFilteredAssetList()
 
 void SAssetCleanerWidget::InitializeColumnAdders()
 {
-	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_RC, [this] (TSharedPtr<SHeaderRow> HeaderRow)
+	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_RC, [this] (const TSharedPtr<SHeaderRow> HeaderRow)
 		{
 			if(bShowRevisionColumn)
 			{
@@ -1669,12 +1478,12 @@ void SAssetCleanerWidget::InitializeColumnAdders()
 			}
 		});
 
-	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_Name, [this] (TSharedPtr<SHeaderRow> HeaderRow)
+	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_Name, [this] (const TSharedPtr<SHeaderRow> HeaderRow)
 		{
 			AddColumnToHeader(HeaderRow, AssetCleanerListColumns::ColumnID_Name, TEXT("Name"), 0.4f);
 		});
 
-	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_Type, [this] (TSharedPtr<SHeaderRow> HeaderRow)
+	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_Type, [this] (const TSharedPtr<SHeaderRow> HeaderRow)
 		{
 			if(bShowTypeColumn)
 			{
@@ -1682,7 +1491,7 @@ void SAssetCleanerWidget::InitializeColumnAdders()
 			}
 		});
 
-	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_DiskSize, [this] (TSharedPtr<SHeaderRow> HeaderRow)
+	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_DiskSize, [this] (const TSharedPtr<SHeaderRow> HeaderRow)
 		{
 			if(bShowDiskSizeColumn)
 			{
@@ -1690,7 +1499,7 @@ void SAssetCleanerWidget::InitializeColumnAdders()
 			}
 		});
 
-	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_Path, [this] (TSharedPtr<SHeaderRow> HeaderRow)
+	ColumnAdders.Add(AssetCleanerListColumns::ColumnID_Path, [this] (const TSharedPtr<SHeaderRow> HeaderRow)
 		{
 			if(bShowPathColumn)
 			{
@@ -1757,8 +1566,8 @@ void SAssetCleanerWidget::SortAssetList()
 	{
 		FilteredDataAssets.Sort([this] (const TSharedPtr<FAssetData>& A, const TSharedPtr<FAssetData>& B)
 			{
-				const int64 SizeA = AssetCleaner::Private::ParseSizeString(AssetCleaner::Private::GetAssetDiskSize(*A));
-				const int64 SizeB = AssetCleaner::Private::ParseSizeString(AssetCleaner::Private::GetAssetDiskSize(*B));
+				const int64 SizeA = UAssetCleanerSubsystem::ParseSizeString(AssetCleaner::Private::GetAssetDiskSize(*A));
+				const int64 SizeB = UAssetCleanerSubsystem::ParseSizeString(AssetCleaner::Private::GetAssetDiskSize(*B));
 				return (CurrentSortMode == EColumnSortMode::Ascending) ? (SizeA < SizeB) : (SizeA > SizeB);
 			});
 	}
@@ -1793,6 +1602,7 @@ TSharedRef<SWidget> SAssetCleanerWidget::CreateStatisticsLayout()
 		[
 			SNew(STextBlock)
 			.Text(FText::FromString("Statistics Panel Coming Soon…"))
+			.Justification(ETextJustify::Center)
 		];
 }
 

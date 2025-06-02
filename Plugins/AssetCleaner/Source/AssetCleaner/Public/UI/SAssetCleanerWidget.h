@@ -16,24 +16,8 @@ enum class EAssetCleanerViewMode : uint8
 	Statistics
 };
 
-/* clang-format off */
 namespace AssetCleaner
 {
-	extern FName AssetCleanerModuleName;
-
-	namespace ModuleName
-	{
-		constexpr const TCHAR* AssetTools		= TEXT("AssetTools");
-		constexpr const TCHAR* AssetRegistry	= TEXT("AssetRegistry");
-		constexpr const TCHAR* ContentBrowser	= TEXT("ContentBrowser");
-		constexpr const TCHAR* DataValidation	= TEXT("DataValidation");
-		constexpr const TCHAR* MessageLog		= TEXT("MessageLog");
-		constexpr const TCHAR* OutputLog		= TEXT("OutputLog");
-		constexpr const TCHAR* Settings			= TEXT("Settings");
-		constexpr const TCHAR* DataAssetManager = TEXT("DataAssetManager");
-		constexpr const TCHAR* PropertyEditor	= TEXT("PropertyEditor");
-	}
-
 	namespace Private
 	{
 		/**
@@ -144,6 +128,7 @@ public:
 	void UpdateFolderTree();
 
 	void InitializeColumns();
+
 	TSet<FName> SelectedPaths;
 	FName LastSortedColumn;
 	EColumnSortMode::Type ColumnPathSortMode = EColumnSortMode::None;

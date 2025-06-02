@@ -22,17 +22,6 @@ namespace AssetCleaner
 	 * Static variable holding the root directory of the project.
 	 */
 	static const FString ProjectDirectory = TEXT("/") + UEditorAssetLibrary::GetProjectRootAssetDirectory();
-
-	static constexpr const TCHAR* CBModuleName = TEXT("ContentBrowser");
-
-	static bool IsExcludedFolder(const FString& FolderPath)
-	{
-		return FolderPath.Contains(TEXT("Developers")) 
-			|| FolderPath.Contains(TEXT("Collections")) 
-			|| FolderPath.Contains(TEXT("__ExternalActors__")) 
-			|| FolderPath.Contains(TEXT("__ExternalObjects__"));
-	}
-
 }
 
 const FName FAssetCleanerModule::AssetCleanerTabName = FName("AssetCleaner");
@@ -98,7 +87,7 @@ void FAssetCleanerModule::ShutdownModule()
 
 void FAssetCleanerModule::OpenManagerTab()
 {
-	const TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(AssetCleaner::AssetCleanerModuleName);
+	const TSharedPtr<SDockTab> ExistingTab = FGlobalTabmanager::Get()->FindExistingLiveTab(AssetCleaner::ModuleName::AssetCleaner);
 
 	if(ExistingTab.IsValid())
 	{
@@ -107,12 +96,12 @@ void FAssetCleanerModule::OpenManagerTab()
 	}
 
 	const TSharedRef<SDockTab> NewTab = CreateAssetCleanerTab(GetAllAssets(AssetCleaner::ProjectDirectory), AssetCleaner::ProjectDirectory);
-	FGlobalTabmanager::Get()->InsertNewDocumentTab(AssetCleaner::AssetCleanerModuleName, FTabManager::ESearchPreference::PreferLiveTab, NewTab);
+	FGlobalTabmanager::Get()->InsertNewDocumentTab(AssetCleaner::ModuleName::AssetCleaner, FTabManager::ESearchPreference::PreferLiveTab, NewTab);
 }
 
 void FAssetCleanerModule::InitializeMenuExtention() 
 {
-	if (FModuleManager::Get().IsModuleLoaded(AssetCleaner::CBModuleName))
+	if (FModuleManager::Get().IsModuleLoaded(AssetCleaner::ModuleName::ContentBrowser))
 	{
 		// FContentBrowserModule& CBModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>(AssetCleaner::CBModuleName);
 		TArray<FContentBrowserMenuExtender_SelectedPaths>& CBModuleMenuExtenders = UAssetCleanerSubsystem::GetContentBrowserModule().GetAllPathViewContextMenuExtenders();
@@ -150,7 +139,7 @@ void FAssetCleanerModule::AddMenuEntry(FMenuBuilder & MenuBuilder)
 void FAssetCleanerModule::OnAssetCleanerButtonClicked()
 {
 	TSharedRef<SDockTab> AssetCleanerTab = CreateAssetCleanerTab(GetAllAssets(SelectedFolderPaths[0]), SelectedFolderPaths[0]);
-	FGlobalTabmanager::Get()->InsertNewDocumentTab(FName("AssetCleaner"), FTabManager::ESearchPreference::PreferLiveTab, AssetCleanerTab );
+	FGlobalTabmanager::Get()->InsertNewDocumentTab(AssetCleaner::ModuleName::AssetCleaner, FTabManager::ESearchPreference::PreferLiveTab, AssetCleanerTab );
 }
 
 TArray<TSharedPtr<FAssetData>> FAssetCleanerModule::GetAllAssets(const FString & Path) const
@@ -166,7 +155,7 @@ TArray<TSharedPtr<FAssetData>> FAssetCleanerModule::GetAllAssets(const FString &
 		ObjectPath.Split(TEXT("."), &PackagePath, nullptr);
 		
 		/** Skip excluded folders or assets that do not exist (using PackagePath to avoid deprecation warning).*/
-		if (AssetCleaner::IsExcludedFolder(PackagePath) || 
+		if (UAssetCleanerSubsystem::IsExcludedFolder(PackagePath) || 
 			!UEditorAssetLibrary::DoesAssetExist(PackagePath))
 		{
 			continue;
@@ -191,7 +180,7 @@ void FAssetCleanerModule::CreateAssetCleanerMenu(FMenuBuilder & SubMenuBuilder)
 								[this]()
 								{
 									const TSharedPtr<SDockTab> ExistingTab = 
-									FGlobalTabmanager::Get()->FindExistingLiveTab(AssetCleaner::AssetCleanerModuleName);
+									FGlobalTabmanager::Get()->FindExistingLiveTab(FTabId(AssetCleaner::ModuleName::AssetCleaner));
 
 									if (ExistingTab.IsValid())
 									{
@@ -201,7 +190,7 @@ void FAssetCleanerModule::CreateAssetCleanerMenu(FMenuBuilder & SubMenuBuilder)
 									
 									const TSharedRef<SDockTab> NewTab = 
 									CreateAssetCleanerTab(GetAllAssets(AssetCleaner::ProjectDirectory), AssetCleaner::ProjectDirectory);
-									FGlobalTabmanager::Get()->InsertNewDocumentTab(AssetCleaner::AssetCleanerModuleName, FTabManager::ESearchPreference::PreferLiveTab, NewTab);
+									FGlobalTabmanager::Get()->InsertNewDocumentTab(AssetCleaner::ModuleName::AssetCleaner, FTabManager::ESearchPreference::PreferLiveTab, NewTab);
 								}
 							)));
 }
