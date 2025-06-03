@@ -17,6 +17,7 @@
 #include "Engine/SimpleConstructionScript.h"
 #include "SceneOutlinerModule.h"
 #include "Columns/OutlinerSimulatePhysicsColumn.h"
+#include "Columns/OutlinerMobilityColumn.h"
 
 #define LOCTEXT_NAMESPACE "FOutlinerToolkitModule"
 
@@ -96,17 +97,31 @@ void FOutlinerToolkitModule::InitCustomSceneOutlinerColumn()
 {
 	FSceneOutlinerModule& SceneOutlinerModule = FModuleManager::LoadModuleChecked<FSceneOutlinerModule>("SceneOutliner");
 
+	// Physics Column
 	FSceneOutlinerColumnInfo SimulatePhysicsColumnInfo(
 		ESceneOutlinerColumnVisibility::Visible,
 		2,
 		FCreateSceneOutlinerColumn::CreateRaw(this, &FOutlinerToolkitModule::OnCreateSimulatePhysics)
 	);
 	SceneOutlinerModule.RegisterDefaultColumnType<FOutlinerSimulatePhysicsColumn>(SimulatePhysicsColumnInfo);
+
+	// Mobility Column
+	FSceneOutlinerColumnInfo MobilityColumnInfo(
+		ESceneOutlinerColumnVisibility::Visible,
+		3,
+		FCreateSceneOutlinerColumn::CreateRaw(this, &FOutlinerToolkitModule::OnCreateMobility)
+	);
+	SceneOutlinerModule.RegisterDefaultColumnType<FOutlinerMobilityColumn>(MobilityColumnInfo);
 }
 
 TSharedRef<ISceneOutlinerColumn> FOutlinerToolkitModule::OnCreateSimulatePhysics(ISceneOutliner& SceneOutliner)
 {
 	return MakeShareable(new FOutlinerSimulatePhysicsColumn(SceneOutliner));
+}
+
+TSharedRef<ISceneOutlinerColumn> FOutlinerToolkitModule::OnCreateMobility(ISceneOutliner& SceneOutliner)
+{
+	return MakeShareable(new FOutlinerMobilityColumn(SceneOutliner));
 }
 
 void FOutlinerToolkitModule::ShutdownModule()

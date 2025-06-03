@@ -22,4 +22,5 @@ public:
 private:
 	void InitCustomSceneOutlinerColumn();
 	TSharedRef<ISceneOutlinerColumn> OnCreateSimulatePhysics(ISceneOutliner& SceneOutliner);
+	TSharedRef<ISceneOutlinerColumn> OnCreateMobility(ISceneOutliner& SceneOutliner);
 };

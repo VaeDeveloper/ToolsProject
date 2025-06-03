@@ -7,6 +7,7 @@
 #include "SceneOutliner.h"
 #include "Engine/StaticMeshActor.h"
 #include "Styling/SlateStyleRegistry.h"
+#include "Styling/CoreStyle.h"
 
 FOutlinerSimulatePhysicsColumn::FOutlinerSimulatePhysicsColumn(ISceneOutliner& SceneOutliner)
 {
@@ -38,47 +39,59 @@ const TSharedRef<SWidget> FOutlinerSimulatePhysicsColumn::ConstructRowWidget(FSc
 		return SNullWidget::NullWidget;
 	}
 
-	const AActor* Actor = ActorTreeItem->Actor.Get();
+	AActor* Actor = ActorTreeItem->Actor.Get();
 	if(!Actor)
 	{
 		return SNullWidget::NullWidget;
 	}
 
-	if(!Actor->IsA<AStaticMeshActor>())
-	{
-		return SNullWidget::NullWidget;
-	}
-
 	UPrimitiveComponent* Primitive = Actor->FindComponentByClass<UPrimitiveComponent>();
-
 	if(!Primitive)
 	{
 		return SNullWidget::NullWidget;
 	}
 
+	bool bIsStaticMeshActor = Actor->IsA<AStaticMeshActor>();
+
+	bool bIsSkySphere = false;
 	if(const UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Primitive))
 	{
 		const UStaticMesh* Mesh = StaticMeshComp->GetStaticMesh();
 		if(Mesh && Mesh->GetName().Contains(TEXT("SM_SkySphere")))
 		{
-			return SNullWidget::NullWidget;
+			bIsSkySphere = true;
 		}
 	}
 
+	const bool bIsEnabled = bIsStaticMeshActor && !bIsSkySphere;
 	TWeakObjectPtr<UPrimitiveComponent> WeakPrimitive = Primitive;
-
-	TSharedRef<SCheckBox> CheckBox = SNew(SCheckBox)
-		.Style(&FSlateStyleRegistry::FindSlateStyle("TakeRecorderStyle")->GetWidgetStyle<FCheckBoxStyle>("TakeRecorder.Source.Switch"))
-		.IsChecked_Lambda([WeakPrimitive] ()
+	// FEditorStyle::Get()->GetWidgetStyle<FCheckBoxStyle>("Graph.Checkbox")
+	// FCoreStyle::Get()->GetWidgetStyle<FCheckBoxStyle>("Menu.CheckBox")
+	// FEditorStyle::Get()->GetWidgetStyle<FCheckBoxStyle>("PinnedCommandList.CheckBox")
+	TSharedRef<SCheckBox> CheckBox = 
+		SNew(SCheckBox)
+		.Style(&FAppStyle::Get().GetWidgetStyle<FCheckBoxStyle>("PinnedCommandList.CheckBox"))
+		.IsChecked_Lambda([WeakPrimitive, bIsEnabled] ()
 			{
+				if(!bIsEnabled)
+				{
+					return ECheckBoxState::Undetermined;
+				}
+
 				if(WeakPrimitive.IsValid())
 				{
 					return WeakPrimitive->IsSimulatingPhysics() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 				}
+
 				return ECheckBoxState::Unchecked;
 			})
-		.OnCheckStateChanged_Lambda([WeakPrimitive, this] (ECheckBoxState NewState)
+		.OnCheckStateChanged_Lambda([WeakPrimitive, this, bIsEnabled] (ECheckBoxState NewState)
 			{
+				if(!bIsEnabled)
+				{
+					return;
+				}
+
 				if(!WeakPrimitive.IsValid())
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Primitive component is invalid in OnCheckStateChanged"));
@@ -95,6 +108,19 @@ const TSharedRef<SWidget> FOutlinerSimulatePhysicsColumn::ConstructRowWidget(FSc
 				{
 					SceneOutliner->FullRefresh();
 				}
+			})
+		.IsEnabled(bIsEnabled)
+		.ToolTipText_Lambda([bIsStaticMeshActor, bIsSkySphere] ()
+			{
+				if(!bIsStaticMeshActor)
+				{
+					return FText::FromString("Only StaticMeshActor supports physics simulation.");
+				}
+				if(bIsSkySphere)
+				{
+					return FText::FromString("SkySphere actors cannot simulate physics.");
+				}
+				return FText::FromString("Toggle physics simulation.");
 			});
 
 	return CheckBox;
