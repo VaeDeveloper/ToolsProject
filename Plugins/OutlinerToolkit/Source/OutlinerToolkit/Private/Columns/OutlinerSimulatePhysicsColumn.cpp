@@ -26,8 +26,9 @@ SHeaderRow::FColumn::FArguments FOutlinerSimulatePhysicsColumn::ConstructHeaderR
 		.HeaderContent()
 		[
 			SNew(STextBlock)
+				//.Image(FSlateBrush())
 				.ColorAndOpacity(FSlateColor::UseForeground())
-				.Text(FText::FromString("Physics"))
+				.Text(FText::FromString("PS"))
 		];
 }
 
@@ -65,9 +66,7 @@ const TSharedRef<SWidget> FOutlinerSimulatePhysicsColumn::ConstructRowWidget(FSc
 
 	const bool bIsEnabled = bIsStaticMeshActor && !bIsSkySphere;
 	TWeakObjectPtr<UPrimitiveComponent> WeakPrimitive = Primitive;
-	// FEditorStyle::Get()->GetWidgetStyle<FCheckBoxStyle>("Graph.Checkbox")
-	// FCoreStyle::Get()->GetWidgetStyle<FCheckBoxStyle>("Menu.CheckBox")
-	// FEditorStyle::Get()->GetWidgetStyle<FCheckBoxStyle>("PinnedCommandList.CheckBox")
+
 	TSharedRef<SCheckBox> CheckBox = 
 		SNew(SCheckBox)
 		.Style(&FAppStyle::Get().GetWidgetStyle<FCheckBoxStyle>("PinnedCommandList.CheckBox"))
