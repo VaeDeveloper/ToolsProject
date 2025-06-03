@@ -9,6 +9,8 @@
 #include "Styling/SlateStyleRegistry.h"
 #include "Styling/CoreStyle.h"
 
+DEFINE_LOG_CATEGORY_STATIC(OutlinerSimulatePhysicsColumnLog, All, All);
+
 FOutlinerSimulatePhysicsColumn::FOutlinerSimulatePhysicsColumn(ISceneOutliner& SceneOutliner)
 {
 	this->SceneOutliner = &SceneOutliner;
@@ -17,14 +19,15 @@ FOutlinerSimulatePhysicsColumn::FOutlinerSimulatePhysicsColumn(ISceneOutliner& S
 SHeaderRow::FColumn::FArguments FOutlinerSimulatePhysicsColumn::ConstructHeaderRowColumn()
 {
 	return SHeaderRow::Column(GetColumnID())
-		/*.FixedWidth(50.0f)*/
+		.FixedWidth(50.0f)
 		.HAlignHeader(HAlign_Center)
+		.VAlignHeader(VAlign_Center)
 		.HAlignCell(HAlign_Center)
 		.VAlignCell(VAlign_Center)
-		.VAlignHeader(VAlign_Center)
 		.DefaultLabel(FText::FromString("Physics"))
 		.HeaderContent()
 		[
+			//TODO !!! use SImage in future 
 			SNew(STextBlock)
 				//.Image(FSlateBrush())
 				.ColorAndOpacity(FSlateColor::UseForeground())
@@ -70,7 +73,7 @@ const TSharedRef<SWidget> FOutlinerSimulatePhysicsColumn::ConstructRowWidget(FSc
 	TSharedRef<SCheckBox> CheckBox = 
 		SNew(SCheckBox)
 		.Style(&FAppStyle::Get().GetWidgetStyle<FCheckBoxStyle>("PinnedCommandList.CheckBox"))
-		.IsChecked_Lambda([WeakPrimitive, bIsEnabled] ()
+		.IsChecked_Lambda([WeakPrimitive, bIsEnabled] 
 			{
 				if(!bIsEnabled)
 				{
@@ -84,7 +87,7 @@ const TSharedRef<SWidget> FOutlinerSimulatePhysicsColumn::ConstructRowWidget(FSc
 
 				return ECheckBoxState::Unchecked;
 			})
-		.OnCheckStateChanged_Lambda([WeakPrimitive, this, bIsEnabled] (ECheckBoxState NewState)
+		.OnCheckStateChanged_Lambda([WeakPrimitive, bIsEnabled, this] (ECheckBoxState NewState)
 			{
 				if(!bIsEnabled)
 				{
@@ -93,7 +96,7 @@ const TSharedRef<SWidget> FOutlinerSimulatePhysicsColumn::ConstructRowWidget(FSc
 
 				if(!WeakPrimitive.IsValid())
 				{
-					UE_LOG(LogTemp, Warning, TEXT("Primitive component is invalid in OnCheckStateChanged"));
+					UE_LOG(OutlinerSimulatePhysicsColumnLog, Warning, TEXT("Primitive component is invalid in OnCheckStateChanged"));
 					return;
 				}
 
@@ -109,7 +112,7 @@ const TSharedRef<SWidget> FOutlinerSimulatePhysicsColumn::ConstructRowWidget(FSc
 				}
 			})
 		.IsEnabled(bIsEnabled)
-		.ToolTipText_Lambda([bIsStaticMeshActor, bIsSkySphere] ()
+		.ToolTipText_Lambda([bIsStaticMeshActor, bIsSkySphere] 
 			{
 				if(!bIsStaticMeshActor)
 				{
