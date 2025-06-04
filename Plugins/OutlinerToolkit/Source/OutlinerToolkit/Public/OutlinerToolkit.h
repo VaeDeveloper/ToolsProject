@@ -11,7 +11,6 @@ class ISceneOutliner;
 class FOutlinerToolkitModule : public IModuleInterface
 {
 public:
-
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
@@ -23,4 +22,5 @@ private:
 	void InitCustomSceneOutlinerColumn();
 	TSharedRef<ISceneOutlinerColumn> OnCreateSimulatePhysics(ISceneOutliner& SceneOutliner);
 	TSharedRef<ISceneOutlinerColumn> OnCreateMobility(ISceneOutliner& SceneOutliner);
+	TSharedRef<ISceneOutlinerColumn> OnCreateHiddenInGame(ISceneOutliner& SceneOutliner);
 };
