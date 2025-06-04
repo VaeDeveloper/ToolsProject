@@ -9,6 +9,8 @@
 
 // Slate
 #include "UI/SUnusedAssetPickerDialog.h"
+#include "UI/SDuplicateAssetsPickerDialog.h"
+
 
 #include "HAL/FileManager.h"
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -61,80 +63,6 @@ namespace CBToolkit
 
 
 
-
-
-class SDuplicateAssetsWindow : public SCompoundWidget
-{
-public:
-	SLATE_BEGIN_ARGS(SDuplicateAssetsWindow) {}
-		SLATE_ARGUMENT(TArray<TSharedPtr<FDuplicateAssetInfo>>, DuplicateAssets)
-	SLATE_END_ARGS()
-
-	void Construct(const FArguments& InArgs)
-	{
-		DuplicateAssets = InArgs._DuplicateAssets;
-
-		ChildSlot
-			[
-				SNew(SVerticalBox)
-					+ SVerticalBox::Slot()
-					.AutoHeight()
-					[
-						SNew(STextBlock)
-							.Text(FText::FromString(TEXT("These are the duplicate assets found:")))
-					]
-					+ SVerticalBox::Slot()
-					.FillHeight(1.0f)
-					[
-						SNew(SListView<TSharedPtr<FDuplicateAssetInfo>>)
-							.ItemHeight(24)
-							.ListItemsSource(&DuplicateAssets)
-							.OnGenerateRow(this, &SDuplicateAssetsWindow::GenerateRowForDuplicateAsset)
-					]
-					+ SVerticalBox::Slot()
-					.AutoHeight()
-					[
-						SNew(SButton)
-							.Text(FText::FromString(TEXT("Delete Selected Assets")))
-							.OnClicked(this, &SDuplicateAssetsWindow::OnDeleteAssetsClicked)
-					]
-			];
-	}
-
-private:
-	TArray<TSharedPtr<FDuplicateAssetInfo>> DuplicateAssets;
-
-	TSharedRef<ITableRow> GenerateRowForDuplicateAsset(TSharedPtr<FDuplicateAssetInfo> InItem, const TSharedRef<STableViewBase>& OwnerTable)
-	{
-		return SNew(STableRow<TSharedPtr<FDuplicateAssetInfo>>, OwnerTable)
-			[
-				SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.FillWidth(1.0f)
-					[
-						SNew(STextBlock)
-							.Text(FText::FromString(InItem->AssetName))
-					]
-			];
-	}
-
-	FReply OnDeleteAssetsClicked()
-	{
-		// Логика удаления ассетов, если они выбраны
-		for(const TSharedPtr<FDuplicateAssetInfo>& AssetInfo : DuplicateAssets)
-		{
-			for(const FAssetData& Asset : AssetInfo->Assets)
-			{
-				// Удаление ассета
-				ObjectTools::DeleteAssets({ Asset });
-			}
-		}
-
-		
-
-		return FReply::Handled();
-	}
-};
 
 
 void FContentBrowserToolkitModule::StartupModule()
@@ -347,7 +275,11 @@ void FContentBrowserToolkitModule::FindDuplicateAssets()
 
 	for(const FAssetData& Asset : AssetList)
 	{
-		NameMap.FindOrAdd(Asset.AssetName.ToString()).Add(Asset);
+		const FString Key = FString::Printf(TEXT("%s__%s"),
+			*Asset.AssetName.ToString(),
+			*Asset.AssetClassPath.ToString());
+
+		NameMap.FindOrAdd(Key).Add(Asset);
 	}
 
 	TArray<TSharedPtr<FDuplicateAssetInfo>> DuplicateAssets;
@@ -375,20 +307,22 @@ void FContentBrowserToolkitModule::FindDuplicateAssets()
 
 void FContentBrowserToolkitModule::ShowDuplicateAssetsWindow(const TArray<TSharedPtr<FDuplicateAssetInfo>>& DuplicateAssets)
 {
-	TSharedRef<SWindow> PickerWindow = SNew(SWindow)
+	TSharedRef<SWindow> PickerWindow = 
+		SNew(SWindow)
 		.Title(FText::FromString(TEXT("Duplicate Assets Found")))
-		.ClientSize(FVector2D(600, 400))
+		.ClientSize(FVector2D(800, 400))
 		.SupportsMinimize(false)
 		.SupportsMaximize(false);
 
-	TSharedPtr<SDuplicateAssetsWindow> PickerWidget;
+	TSharedPtr<SDuplicateAssetsPickerDialog> PickerWidget;
 
-	PickerWindow->SetContent(
-		SAssignNew(PickerWidget, SDuplicateAssetsWindow)
+	PickerWindow->SetContent
+	(
+		SAssignNew(PickerWidget, SDuplicateAssetsPickerDialog)
 		.DuplicateAssets(DuplicateAssets)
 	);
 
-	FSlateApplication::Get().AddModalWindow(PickerWindow, nullptr);
+	FSlateApplication::Get().AddWindow(PickerWindow);
 }
 
 void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
@@ -404,7 +338,6 @@ void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
 		}
 	};
 
-	// Получаем список ассетов в выбранной папке
 	TArray<FString> AssetsInFolder = UEditorAssetLibrary::ListAssets(FolderPathsSelected[0]);
 
 	if(AssetsInFolder.Num() == 0)
@@ -413,10 +346,7 @@ void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
 		return;
 	}
 
-	// Структура для хранения ассетов и их предполагаемых новых имен
 	TArray<TSharedPtr<FAssetRenamePreview>> PreviewAssets;
-
-	// Заполняем PreviewAssets текущими ассетами и их новыми именами
 	for(const FString& AssetPath : AssetsInFolder)
 	{
 		FAssetData AssetData = UEditorAssetLibrary::FindAssetData(AssetPath);
@@ -426,8 +356,8 @@ void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
 		}
 	}
 
-	// Диалоговое окно
-	TSharedRef<SWindow> DialogWindow = SNew(SWindow)
+	TSharedRef<SWindow> DialogWindow =
+		SNew(SWindow)
 		.Title(FText::FromString(TEXT("Rename Assets")))
 		.ClientSize(FVector2D(500, 300))
 		.SupportsMinimize(false)
@@ -438,7 +368,6 @@ void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
 
 	DialogWindow->SetContent(
 		SNew(SVerticalBox)
-		// Поле для ввода префикса
 		+ SVerticalBox::Slot()
 		.AutoHeight()
 		[
@@ -449,7 +378,6 @@ void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
 		[
 			SAssignNew(PrefixTextBox, SEditableTextBox)
 		]
-		// Поле для ввода суффикса
 		+ SVerticalBox::Slot()
 		.AutoHeight()
 		[
@@ -460,7 +388,6 @@ void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
 		[
 			SAssignNew(SuffixTextBox, SEditableTextBox)
 		]
-		// Превью ассетов с новыми именами
 		+ SVerticalBox::Slot()
 		.FillHeight(1.0f)
 		[
@@ -485,7 +412,6 @@ void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
 							];
 					})
 		]
-		// Кнопки: Отмена и Применить
 		+ SVerticalBox::Slot()
 		.AutoHeight()
 		[
@@ -511,23 +437,18 @@ void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
 								FString Prefix = PrefixTextBox->GetText().ToString();
 								FString Suffix = SuffixTextBox->GetText().ToString();
 
-								// Перебираем PreviewAssets и обновляем каждый ассет
 								for(TSharedPtr<FAssetRenamePreview>& AssetPreview : PreviewAssets)
 								{
 									FString NewAssetName = Prefix + AssetPreview->OldName + Suffix;
 									AssetPreview->NewName = NewAssetName;
 
-									// Переименовываем ассет
 									FAssetData AssetData = UEditorAssetLibrary::FindAssetData(AssetPreview->OldName);
 									if(AssetData.IsValid())
 									{
-										// Получаем объект ассета для передачи в TWeakObjectPtr
 										TWeakObjectPtr<UObject> AssetObject = AssetData.GetAsset();
 
-										// Путь к пакету, где ассет будет переименован
 										FString NewPackagePath = AssetData.PackageName.ToString(); // Путь к пакету
 
-										// Теперь передаем правильные параметры для FAssetRenameData
 										FAssetRenameData RenameData(AssetObject, NewPackagePath, NewAssetName);
 										FAssetToolsModule::GetModule().Get().RenameAssets({ RenameData });
 									}

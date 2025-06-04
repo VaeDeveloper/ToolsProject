@@ -4,11 +4,8 @@
 
 #include "Modules/ModuleManager.h"
 
-struct FDuplicateAssetInfo
-{
-	FString AssetName;
-	TArray<FAssetData> Assets;
-};
+
+
 
 class FContentBrowserToolkitModule : public IModuleInterface
 {
@@ -32,7 +29,7 @@ private:
 	void OnDeleteEmptyFoldersClicked();
 
 	void PopulateAssetActionSubmenu(FMenuBuilder& MenuBuilder);
-	void ShowDuplicateAssetsWindow(const TArray<TSharedPtr<FDuplicateAssetInfo>>& DuplicateAssets);
+	void ShowDuplicateAssetsWindow(const TArray<TSharedPtr<struct FDuplicateAssetInfo>>& DuplicateAssets);
 	void ShowRenameAssetsDialog();
 
 	TArray<FString> FolderPathsSelected;
