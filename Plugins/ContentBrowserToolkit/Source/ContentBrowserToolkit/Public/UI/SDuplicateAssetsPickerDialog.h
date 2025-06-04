@@ -42,7 +42,8 @@ public:
 					.ItemHeight(24)
 					.ListItemsSource(&DuplicateAssets)
 					.OnGenerateRow(this, &SDuplicateAssetsPickerDialog::GenerateRowForDuplicateAsset)
-					.HeaderRow(
+					.HeaderRow
+					(
 						SNew(SHeaderRow)
 						+ SHeaderRow::Column("AssetName")
 						.DefaultLabel(FText::FromString("Name"))
@@ -63,7 +64,7 @@ public:
 private:
 	TSharedRef<ITableRow> GenerateRowForDuplicateAsset(TSharedPtr<FDuplicateAssetInfo> InItem, const TSharedRef<STableViewBase>& OwnerTable)
 	{
-		return SNew(STableRow<TSharedPtr<FDuplicateAssetInfo>>, OwnerTable)
+		return SNew(STableRow<TSharedPtr<FDuplicateAssetInfo>>, OwnerTable).Style(FAppStyle::Get(), "ContentBrowser.AssetListView.ColumnListTableRow")
 			[
 				SNew(SHorizontalBox)
 
@@ -75,7 +76,7 @@ private:
 					.Text(FText::FromString(InItem->AssetName))
 				]
 
-				// Column: Path(s) Ч список ссылок
+				// Column: Path(s)
 				+ SHorizontalBox::Slot()
 				.FillWidth(0.7f)
 				[
@@ -91,34 +92,47 @@ private:
 
 	TSharedRef<SWidget> GenerateClickableAssetList(const TArray<FAssetData>& Assets)
 	{
-		TSharedRef<SVerticalBox> VBox = SNew(SVerticalBox);
+		TSharedRef<SVerticalBox> VerticalBox = SNew(SVerticalBox);
 
 		for(const FAssetData& Asset : Assets)
 		{
-			VBox->AddSlot()
+			const FString AssetName = Asset.PackageName.ToString();
+			const FString AssetPathPrefix = AssetName.LeftChop(AssetName.Len());
+
+			VerticalBox->AddSlot()
 				.AutoHeight()
 				.Padding(0, 2)
 				[
-					SNew(SHyperlink)
-					.Style(&FAppStyle::Get(), "HoverOnlyHyperlink")
-					.Text(FText::FromString(Asset.PackageName.ToString()))
-					.Cursor(EMouseCursor::Hand)
-					.OnNavigate_Lambda([Asset] ()
-						{
-							if(Asset.IsValid())
+					SNew(SHorizontalBox)
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					[
+						SNew(STextBlock)
+						.Text(FText::FromString(AssetPathPrefix))
+					]
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					[
+						SNew(SHyperlink)
+						.Text(FText::FromString(AssetName))
+						.Style(&FAppStyle::Get(), "HoverOnlyHyperlink")
+						.Cursor(EMouseCursor::Hand)
+						.OnNavigate_Lambda([Asset] ()
 							{
-								const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-								TArray<FAssetData> ToFocus = { Asset };
-								ContentBrowserModule.Get().SyncBrowserToAssets(ToFocus);
-							}
-						})
+								if(Asset.IsValid())
+								{
+									const FContentBrowserModule& CBModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+									CBModule.Get().SyncBrowserToAssets({ Asset });
+								}
+							})
+					]
 				];
 		}
 
-		return VBox;
+		return VerticalBox;
 	}
 
 	TArray<TSharedPtr<FDuplicateAssetInfo>> DuplicateAssets;
-	TMap<TSharedPtr<FDuplicateAssetInfo>, int32> FocusedAssetIndices;
-
 };
