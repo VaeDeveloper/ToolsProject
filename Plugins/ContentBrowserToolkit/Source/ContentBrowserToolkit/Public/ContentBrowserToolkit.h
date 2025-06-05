@@ -30,7 +30,6 @@ private:
 
 	void PopulateAssetActionSubmenu(FMenuBuilder& MenuBuilder);
 	void ShowDuplicateAssetsWindow(const TArray<TSharedPtr<struct FDuplicateAssetInfo>>& DuplicateAssets);
-	void ShowRenameAssetsDialog();
 
 	TArray<FString> FolderPathsSelected;
 };

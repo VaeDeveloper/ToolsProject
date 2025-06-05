@@ -130,20 +130,18 @@ void FContentBrowserToolkitModule::PopulateAssetActionSubmenu(FMenuBuilder& Menu
 		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::FindDuplicateAssets))
 	);
 
-	MenuBuilder.AddMenuEntry(
-		FText::FromString("Rename All Assets "),
-		FText::FromString(""),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.GenericFind"),
-		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::ShowRenameAssetsDialog))
-	);
+	//MenuBuilder.AddMenuEntry(
+	//	FText::FromString("Rename All Assets "),
+	//	FText::FromString(""),
+	//	FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.GenericFind"),
+	//	FUIAction())
+	//);
 }
 
 void FContentBrowserToolkitModule::OnDeleteEmptyFoldersClicked()
 {
-	const TArray<FString> FolderPathsArray = UEditorAssetLibrary::ListAssets(FolderPathsSelected[0], true, true);
-	uint32 Counter = 0;
-
-	FString EmptyFolderPathsNames;
+	TArray<FString> EmptyFolders;
+	TArray<FString> FolderPathsArray = UEditorAssetLibrary::ListAssets(FolderPathsSelected[0], true, true);
 	TArray<FString> EmptyFoldersPathsArray;
 
 	for(const FString& FolderPath : FolderPathsArray)
@@ -152,37 +150,69 @@ void FContentBrowserToolkitModule::OnDeleteEmptyFoldersClicked()
 
 		if(!UEditorAssetLibrary::DoesDirectoryHaveAssets(FolderPath, true))
 		{
-			EmptyFolderPathsNames.Append(FolderPath);
-			EmptyFolderPathsNames.Append(TEXT("\n"));
 			EmptyFoldersPathsArray.Add(FolderPath);
 		}
 	}
 
 	if(EmptyFoldersPathsArray.IsEmpty())
 	{
-		CBToolkit::ShowMessageDialog(EAppMsgType::Ok, TEXT("No empty Folder found under selected folder"), false);
+		UE_LOG(LogTemp, Warning, TEXT("No empty folders found under the selected folder."));
+		CBToolkit::ShowMessageDialog(EAppMsgType::Ok, TEXT("No empty folder found under selected folder"), false);
 		return;
 	}
 
-	const FString Msg = TEXT("Empty Folders founds in:\n") + EmptyFolderPathsNames + TEXT("\nWould you like to delete all?");
+	const FString Msg = TEXT("Empty folders found:\n") + FString::Join(EmptyFoldersPathsArray, TEXT("\n")) + TEXT("\nWould you like to delete all?");
 	const EAppReturnType::Type ConfirmResult = CBToolkit::ShowMessageDialog(EAppMsgType::YesNoCancel, Msg, false);
 
-	if(ConfirmResult == EAppReturnType::Cancel || ConfirmResult == EAppReturnType::No) return;
-
-	for(const FString& EmptyFolderPath : EmptyFoldersPathsArray)
+	if(ConfirmResult == EAppReturnType::Cancel || ConfirmResult == EAppReturnType::No)
 	{
-		if(UEditorAssetLibrary::DeleteDirectory(EmptyFolderPath))
+		return;
+	}
+
+	FScopedSlowTask SlowTaskMain(
+		1.0f,
+		FText::FromString(TEXT("Deleting empty folders...")),
+		GIsEditor && !IsRunningCommandlet()
+	);
+	SlowTaskMain.MakeDialog(false, false);
+	SlowTaskMain.EnterProgressFrame(1.0f);
+
+	FScopedSlowTask SlowTask(
+		EmptyFoldersPathsArray.Num(),
+		FText::FromString(TEXT(" ")),
+		GIsEditor && !IsRunningCommandlet()
+	);
+	SlowTask.MakeDialog(false, false);
+
+	bool bErrors = false;
+	int32 NumFoldersDeleted = 0;
+
+	for(const FString& FolderPath : EmptyFoldersPathsArray)
+	{
+		SlowTask.EnterProgressFrame(1.0f, FText::FromString(FolderPath));
+
+		if(UEditorAssetLibrary::DeleteDirectory(FolderPath))
 		{
-			++Counter;
+			++NumFoldersDeleted;
 		}
 		else
 		{
-			CBToolkit::PrintGEngineScreen(TEXT("Failed to Delete " + EmptyFolderPath), FColor::Red);
+			bErrors = true;
+			UE_LOG(LogTemp, Error, TEXT("Failed to delete folder: %s"), *FolderPath);
 		}
 	}
-	if(Counter > 0)
+
+	const FString ResultMsg = FString::Printf(TEXT("Deleted %d of %d empty folders"), NumFoldersDeleted, EmptyFoldersPathsArray.Num());
+	UE_LOG(LogTemp, Display, TEXT("%s"), *ResultMsg);
+
+	if(bErrors)
 	{
-		CBToolkit::ShowNotifyInfo(TEXT("Successfully Deleted ") + FString::FromInt(Counter) + TEXT(" Folders"));
+		UE_LOG(LogTemp, Error, TEXT("Some folders could not be deleted. Check the log for more details."));
+		CBToolkit::ShowNotifyInfo(ResultMsg);
+	}
+	else
+	{
+		CBToolkit::ShowNotifyInfo(ResultMsg);
 	}
 }
 
@@ -270,7 +300,15 @@ void FContentBrowserToolkitModule::FindDuplicateAssets()
 		const FName FolderPathName = *FolderPath;
 		TArray<FAssetData> FolderAssets;
 		AssetRegistryModule.Get().GetAssetsByPath(FolderPathName, FolderAssets, true);
-		AssetList.Append(FolderAssets);
+
+		for(const FAssetData& Asset : FolderAssets)
+		{
+			const FString AssetPath = Asset.PackagePath.ToString();
+			if(!CBToolkit::IsExcludedFolder(AssetPath))
+			{
+				AssetList.Add(Asset);
+			}
+		}
 	}
 
 	for(const FAssetData& Asset : AssetList)
@@ -325,145 +363,6 @@ void FContentBrowserToolkitModule::ShowDuplicateAssetsWindow(const TArray<TShare
 	FSlateApplication::Get().AddWindow(PickerWindow);
 }
 
-void FContentBrowserToolkitModule::ShowRenameAssetsDialog()
-{
-	struct FAssetRenamePreview
-	{
-		FString OldName;
-		FString NewName;
-
-		FAssetRenamePreview(const FString& InOldName, const FString& InNewName)
-			: OldName(InOldName), NewName(InNewName)
-		{
-		}
-	};
-
-	TArray<FString> AssetsInFolder = UEditorAssetLibrary::ListAssets(FolderPathsSelected[0]);
-
-	if(AssetsInFolder.Num() == 0)
-	{
-		CBToolkit::ShowMessageDialog(EAppMsgType::Ok, TEXT("No assets found in the selected folder."));
-		return;
-	}
-
-	TArray<TSharedPtr<FAssetRenamePreview>> PreviewAssets;
-	for(const FString& AssetPath : AssetsInFolder)
-	{
-		FAssetData AssetData = UEditorAssetLibrary::FindAssetData(AssetPath);
-		if(AssetData.IsValid())
-		{
-			PreviewAssets.Add(MakeShareable(new FAssetRenamePreview(AssetData.AssetName.ToString(), AssetData.AssetName.ToString())));
-		}
-	}
-
-	TSharedRef<SWindow> DialogWindow =
-		SNew(SWindow)
-		.Title(FText::FromString(TEXT("Rename Assets")))
-		.ClientSize(FVector2D(500, 300))
-		.SupportsMinimize(false)
-		.SupportsMaximize(false);
-
-	TSharedPtr<SEditableTextBox> PrefixTextBox;
-	TSharedPtr<SEditableTextBox> SuffixTextBox;
-
-	DialogWindow->SetContent(
-		SNew(SVerticalBox)
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SNew(STextBlock).Text(FText::FromString(TEXT("Enter Prefix to Add")))
-		]
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SAssignNew(PrefixTextBox, SEditableTextBox)
-		]
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SNew(STextBlock).Text(FText::FromString(TEXT("Enter Suffix to Add")))
-		]
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SAssignNew(SuffixTextBox, SEditableTextBox)
-		]
-		+ SVerticalBox::Slot()
-		.FillHeight(1.0f)
-		[
-			SNew(SListView<TSharedPtr<FAssetRenamePreview>>)
-				.ItemHeight(24)
-				.ListItemsSource(&PreviewAssets)
-				.OnGenerateRow_Lambda([] (TSharedPtr<FAssetRenamePreview> AssetPreview, const TSharedRef<STableViewBase>& OwnerTable)
-					{
-						return SNew(STableRow<TSharedPtr<FAssetRenamePreview>>, OwnerTable)
-							[
-								SNew(SHorizontalBox)
-									+ SHorizontalBox::Slot()
-									.AutoWidth()
-									[
-										SNew(STextBlock).Text(FText::FromString(AssetPreview->OldName)) // старое имя
-									]
-									+ SHorizontalBox::Slot()
-									.AutoWidth()
-									[
-										SNew(STextBlock).Text(FText::FromString(AssetPreview->NewName)) // новое имя
-									]
-							];
-					})
-		]
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		[
-			SNew(SHorizontalBox)
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SButton)
-						.Text(FText::FromString(TEXT("Cancel")))
-						.OnClicked_Lambda([DialogWindow] ()
-							{
-								DialogWindow->RequestDestroyWindow();
-								return FReply::Handled();
-							})
-				]
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SButton)
-						.Text(FText::FromString(TEXT("Apply Changes")))
-						.OnClicked_Lambda([PrefixTextBox, SuffixTextBox, &PreviewAssets, DialogWindow] ()
-							{
-								FString Prefix = PrefixTextBox->GetText().ToString();
-								FString Suffix = SuffixTextBox->GetText().ToString();
-
-								for(TSharedPtr<FAssetRenamePreview>& AssetPreview : PreviewAssets)
-								{
-									FString NewAssetName = Prefix + AssetPreview->OldName + Suffix;
-									AssetPreview->NewName = NewAssetName;
-
-									FAssetData AssetData = UEditorAssetLibrary::FindAssetData(AssetPreview->OldName);
-									if(AssetData.IsValid())
-									{
-										TWeakObjectPtr<UObject> AssetObject = AssetData.GetAsset();
-
-										FString NewPackagePath = AssetData.PackageName.ToString(); // Путь к пакету
-
-										FAssetRenameData RenameData(AssetObject, NewPackagePath, NewAssetName);
-										FAssetToolsModule::GetModule().Get().RenameAssets({ RenameData });
-									}
-								}
-
-								DialogWindow->RequestDestroyWindow();
-								CBToolkit::ShowNotifyInfo(TEXT("Assets renamed successfully."));
-								return FReply::Handled();
-							})
-				]
-		]
-	);
-
-	FSlateApplication::Get().AddModalWindow(DialogWindow, nullptr);
-}
 #undef LOCTEXT_NAMESPACE
 	
 IMPLEMENT_MODULE(FContentBrowserToolkitModule, ContentBrowserToolkit)
