@@ -130,12 +130,12 @@ void FContentBrowserToolkitModule::PopulateAssetActionSubmenu(FMenuBuilder& Menu
 		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::FindDuplicateAssets))
 	);
 
-	//MenuBuilder.AddMenuEntry(
-	//	FText::FromString("Rename All Assets "),
-	//	FText::FromString(""),
-	//	FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.GenericFind"),
-	//	FUIAction())
-	//);
+	MenuBuilder.AddMenuEntry(
+		FText::FromString("Rename All Assets "),
+		FText::FromString(""),
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.GenericFind"),
+		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::OnDeleteEmptyFoldersClicked))
+	);
 }
 
 void FContentBrowserToolkitModule::OnDeleteEmptyFoldersClicked()
