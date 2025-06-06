@@ -124,17 +124,19 @@ void FContentBrowserToolkitModule::PopulateAssetActionSubmenu(FMenuBuilder& Menu
 	);
 
 	MenuBuilder.AddMenuEntry(
+		FText::FromString("Delete Emtpy Folders"),
+		FText::FromString(""),
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "CurveEditor.DeleteTab.Small"),
+		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::OnDeleteEmptyFoldersClicked))
+	);
+
+	// FSlateIcon(FName("EditorStyle"), "CurveEditor.DeleteTab.Small")
+
+	MenuBuilder.AddMenuEntry(
 		FText::FromString("Find Duplicate Assets"),
 		FText::FromString("Scan for duplicate assets in the selected folders"),
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.GenericFind"),
 		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::FindDuplicateAssets))
-	);
-
-	MenuBuilder.AddMenuEntry(
-		FText::FromString("Rename All Assets "),
-		FText::FromString(""),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.GenericFind"),
-		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::OnDeleteEmptyFoldersClicked))
 	);
 }
 
