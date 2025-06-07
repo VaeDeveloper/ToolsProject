@@ -18,6 +18,7 @@
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
 
+
 #define LOCTEXT_NAMESPACE "FContentBrowserToolkitModule"
 
 namespace CBToolkit
@@ -60,8 +61,6 @@ namespace CBToolkit
 	}
 
 }
-
-
 
 
 
@@ -137,6 +136,13 @@ void FContentBrowserToolkitModule::PopulateAssetActionSubmenu(FMenuBuilder& Menu
 		FText::FromString("Scan for duplicate assets in the selected folders"),
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.GenericFind"),
 		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::FindDuplicateAssets))
+	);
+
+	MenuBuilder.AddMenuEntry(
+		FText::FromString("Add Prefixes"),
+		FText::FromString("Scan for duplicate assets in the selected folders"),
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "ContentBrowser.AssetActions.GenericFind"),
+		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::AddPrefix))
 	);
 }
 
@@ -293,7 +299,6 @@ void FContentBrowserToolkitModule::OnDeleteUnusedAssetClicked()
 void FContentBrowserToolkitModule::FindDuplicateAssets()
 {
 	TMap<FString, TArray<FAssetData>> NameMap;
-
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	TArray<FAssetData> AssetList;
 
@@ -363,6 +368,84 @@ void FContentBrowserToolkitModule::ShowDuplicateAssetsWindow(const TArray<TShare
 	);
 
 	FSlateApplication::Get().AddWindow(PickerWindow);
+}
+
+void FContentBrowserToolkitModule::AddPrefix()
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+
+	TArray<FAssetRenameData> RenameDataArray;
+	uint32 Counter = 0;
+
+	for(const FString& FolderPath : FolderPathsSelected)
+	{
+		TArray<FAssetData> FolderAssets;
+		const FName FolderPathName = *FolderPath;
+
+		// Получаем ассеты из указанной папки
+		AssetRegistryModule.Get().GetAssetsByPath(FolderPathName, FolderAssets, true);
+
+		for(const FAssetData& Asset : FolderAssets)
+		{
+			if(!Asset.IsValid())
+				continue;
+
+			const FString AssetPath = Asset.PackagePath.ToString();
+			if(CBToolkit::IsExcludedFolder(AssetPath))
+				continue;
+
+			const UClass* AssetClass = Asset.GetClass();
+			if(!AssetClass)
+				continue;
+
+			const FString* Prefix = AssetRenameConfig.PrefixMap.Find(AssetClass);
+			if(!Prefix || Prefix->IsEmpty())
+			{
+				CBToolkit::PrintGEngineScreen("No prefix for " + AssetClass->GetName(), FColor::Red);
+				continue;
+			}
+
+			FString OldName = Asset.AssetName.ToString();
+
+			if(OldName.StartsWith(*Prefix))
+			{
+				CBToolkit::PrintGEngineScreen(OldName + TEXT(" already has prefix"), FColor::Yellow);
+				continue;
+			}
+
+			// Специальная логика для Material Instance
+			if(AssetClass->IsChildOf(UMaterialInstanceConstant::StaticClass()))
+			{
+				OldName.RemoveFromStart(TEXT("M_"));
+				OldName.RemoveFromEnd(TEXT("_Inst"));
+			}
+
+			const FString NewName = *Prefix + OldName;
+
+			// Загружаем UObject для использования с FAssetRenameData
+			UObject* AssetObj = Asset.GetAsset();
+			if(!AssetObj)
+			{
+				CBToolkit::PrintGEngineScreen("Failed to load asset: " + Asset.ObjectPath.ToString(), FColor::Red);
+				continue;
+			}
+
+			FAssetRenameData RenameData(AssetObj, Asset.PackagePath.ToString(), NewName);
+			RenameDataArray.Add(MoveTemp(RenameData));
+			++Counter;
+		}
+	}
+
+	if(RenameDataArray.Num() > 0)
+	{
+		AssetTools.RenameAssets(RenameDataArray);
+		CBToolkit::ShowNotifyInfo("Renamed " + FString::FromInt(Counter) + " assets with prefixes.");
+	}
+	else
+	{
+		CBToolkit::ShowNotifyInfo("No assets needed renaming.");
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

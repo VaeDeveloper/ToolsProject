@@ -43,7 +43,9 @@ public class ContentBrowserToolkit : ModuleRules
 				"ContentBrowser",
 				"EditorScriptingUtilities",
 				"UnrealEd",
-				"AssetTools"
+				"AssetTools",
+				"AnimGraphRuntime",
+				"UMG"
 			}
 			);
 		
