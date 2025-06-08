@@ -17,7 +17,8 @@
 
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
-
+#include "Settings/ContentBrowserToolkitSettings.h"
+#include "Materials/MaterialInstanceConstant.h"
 
 #define LOCTEXT_NAMESPACE "FContentBrowserToolkitModule"
 
@@ -372,18 +373,19 @@ void FContentBrowserToolkitModule::ShowDuplicateAssetsWindow(const TArray<TShare
 
 void FContentBrowserToolkitModule::AddPrefix()
 {
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 
 	TArray<FAssetRenameData> RenameDataArray;
 	uint32 Counter = 0;
+
+	const UContentBrowserToolkitSettings* Settings = UContentBrowserToolkitSettings::Get();
 
 	for(const FString& FolderPath : FolderPathsSelected)
 	{
 		TArray<FAssetData> FolderAssets;
 		const FName FolderPathName = *FolderPath;
 
-		// Получаем ассеты из указанной папки
 		AssetRegistryModule.Get().GetAssetsByPath(FolderPathName, FolderAssets, true);
 
 		for(const FAssetData& Asset : FolderAssets)
@@ -399,31 +401,32 @@ void FContentBrowserToolkitModule::AddPrefix()
 			if(!AssetClass)
 				continue;
 
-			const FString* Prefix = AssetRenameConfig.PrefixMap.Find(AssetClass);
-			if(!Prefix || Prefix->IsEmpty())
+			const FAssetNamingRule* FormatRule = nullptr;
+			for(const auto& Pair : Settings->ClassNameFormatMap)
 			{
-				CBToolkit::PrintGEngineScreen("No prefix for " + AssetClass->GetName(), FColor::Red);
+				if(Pair.Key.IsValid() && AssetClass->IsChildOf(Pair.Key.Get()))
+				{
+					FormatRule = &Pair.Value;
+					break;
+				}
+			}
+
+			if(!FormatRule)
+			{
+				CBToolkit::PrintGEngineScreen("No naming format for " + AssetClass->GetName(), FColor::Red);
 				continue;
 			}
 
 			FString OldName = Asset.AssetName.ToString();
 
-			if(OldName.StartsWith(*Prefix))
+			if(OldName.StartsWith(FormatRule->Prefix) && OldName.EndsWith(FormatRule->Suffix))
 			{
-				CBToolkit::PrintGEngineScreen(OldName + TEXT(" already has prefix"), FColor::Yellow);
+				CBToolkit::PrintGEngineScreen(OldName + TEXT(" already has prefix & suffix"), FColor::Yellow);
 				continue;
 			}
 
-			// Специальная логика для Material Instance
-			if(AssetClass->IsChildOf(UMaterialInstanceConstant::StaticClass()))
-			{
-				OldName.RemoveFromStart(TEXT("M_"));
-				OldName.RemoveFromEnd(TEXT("_Inst"));
-			}
+			const FString NewName = FormatRule->Prefix + OldName + FormatRule->Suffix;
 
-			const FString NewName = *Prefix + OldName;
-
-			// Загружаем UObject для использования с FAssetRenameData
 			UObject* AssetObj = Asset.GetAsset();
 			if(!AssetObj)
 			{
