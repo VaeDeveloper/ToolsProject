@@ -11,10 +11,8 @@
 #include "UI/SUnusedAssetPickerDialog.h"
 #include "UI/SDuplicateAssetsPickerDialog.h"
 
-
 #include "HAL/FileManager.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
 #include "Settings/ContentBrowserToolkitSettings.h"
@@ -60,10 +58,7 @@ namespace CBToolkit
 		NotifyInfo.FadeOutDuration = 7.0f;
 		FSlateNotificationManager::Get().AddNotification(NotifyInfo);
 	}
-
 }
-
-
 
 void FContentBrowserToolkitModule::StartupModule()
 {
@@ -110,7 +105,7 @@ void FContentBrowserToolkitModule::AddContentBrowserMenuEntry(FMenuBuilder& Menu
 		FText::FromString(TEXT("Asset Actions Toolkit")),
 		FText::FromString(TEXT("Advanced tools for asset management")),
 		FNewMenuDelegate::CreateRaw(this, &FContentBrowserToolkitModule::PopulateAssetActionSubmenu),
-		false, // default false
+		false,
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.GameSettings"));
 }
 
@@ -129,8 +124,6 @@ void FContentBrowserToolkitModule::PopulateAssetActionSubmenu(FMenuBuilder& Menu
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "CurveEditor.DeleteTab.Small"),
 		FUIAction(FExecuteAction::CreateRaw(this, &FContentBrowserToolkitModule::OnDeleteEmptyFoldersClicked))
 	);
-
-	// FSlateIcon(FName("EditorStyle"), "CurveEditor.DeleteTab.Small")
 
 	MenuBuilder.AddMenuEntry(
 		FText::FromString("Find Duplicate Assets"),
