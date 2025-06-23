@@ -16,18 +16,15 @@ class TOOLSPROJECT_API UTestDataAsset : public UDataAsset
 
 public:
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> TestAnimMontage;
+	TObjectPtr<UAnimMontage> TestAnimMontage1;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> TestAnimMontage;
+	TObjectPtr<UAnimMontage> TestAnimMontage2;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> TestAnimMontage;
+	TObjectPtr<UAnimMontage> TestAnimMontage3;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> TestAnimMontage;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<UCurveFloat> TestCurveClass
+	TObjectPtr<UAnimMontage> TestAnimMontage4;
 	
 };

@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 
+
 /**
  * 
  */
-class TOOLSPROJECT_API InitialClass
+class TOOLSPROJECT_API InitialClass : public AActor
 {
 public:
 	InitialClass();
