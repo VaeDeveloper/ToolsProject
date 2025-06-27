@@ -15,7 +15,7 @@ GitHub: [https://github.com/VaeDeveloper/ToolsProject](https://github.com/VaeDev
 | **AssetCleaner**         | Cleans up unused or redundant assets in your project, keeping it lightweight and organized. |
 | **ContentBrowserToolkit** | Extends the Content Browser with additional filters, actions, and productivity features.  |
 | **OutlinerToolkit**      | Enhances the Outliner with improved object management, filtering, and scene navigation tools. |
-| **StatGraphView**        |  Visualizes real-time performance stats in graph form, helping you analyze and optimize game systems. |
+| **SlateUnitGraph**        |  Visualizes real-time performance stats in graph form, helping you analyze and optimize game systems. |
 | **DataAssetManager**     | Manages DataAssets with batch operations, editing, and organization tools.               |
 | **ValidatorX**          | Runs automated validation rules to detect issues like missing references, unused variables, or wrong settings. |
 | **ConsoleCommandCenter** | Centralized interface to execute, manage, and organize console commands within the editor. |
