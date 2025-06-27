@@ -34,6 +34,11 @@
 			"Name": "SlateStyleBrowser",
 			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/7f51deb58ead4fed88abc798ca7c9ae4"
+		},
+		{
+			"Name": "ModuleGenerator",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/ec36ec6e94f74075819e2a04f7cb97f3"
 		}
 	]
 }

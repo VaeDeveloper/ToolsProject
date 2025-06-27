@@ -5,6 +5,7 @@
 #include "Widgets/SValidatorWidget.h"
 #include "EditorValidatorSubsystem.h"
 
+#include "Layout/WidgetPath.h"
 DEFINE_LOG_CATEGORY_STATIC(LogValidatorX, All, All);
 
 #define LOCTEXT_NAMESPACE "FValidatorXModule"
@@ -15,14 +16,33 @@ void FValidatorXModule::StartupModule()
 {
 	FCoreDelegates::OnPostEngineInit.AddRaw(this, &FValidatorXModule::HandlePostEngineInit);
 
-    FGlobalTabmanager::Get()->RegisterNomadTabSpawner(ValidatorXTabName, FOnSpawnTab::CreateRaw(this, &FValidatorXModule::OnSpawnValidatorXTab))
-        .SetDisplayName(NSLOCTEXT("ValidatorX", "TabTitle", "ValidatorX"))
-        .SetMenuType(GetVisibleModule());
+	// add the File->DataValidation menu subsection
+	UToolMenus::Get()->RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FValidatorXModule::RegisterMenus));
+
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(ValidatorXTabName, FOnSpawnTab::CreateRaw(this, &FValidatorXModule::OnSpawnValidatorXTab))
+     .SetDisplayName(NSLOCTEXT("ValidatorX", "TabTitle", "ValidatorX"))
+     .SetMenuType(ETabSpawnerMenuType::Hidden);
+}
+
+void FValidatorXModule::RegisterMenus()
+{
+	if(!IsRunningCommandlet() && !IsRunningGame() && FSlateApplication::IsInitialized())
+	{
+		UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
+		FToolMenuSection& Section = Menu->FindOrAddSection("DataValidation");
+		Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+			"ValidatorX",
+			LOCTEXT("OpenValidatorX", "Open ValidatorX"),
+			LOCTEXT("OpenValidatorXTooltip", "Opens the ValidatorX tool window."),
+			FSlateIcon(FSlateIcon(FName("EditorStyle"), "Icons.Validate")),
+			FUIAction(FExecuteAction::CreateRaw(this, &FValidatorXModule::OpenManagerTab))));
+	}
 }
 
 void FValidatorXModule::ShutdownModule()
 {
-
+	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(ValidatorXTabName);
+	UToolMenus::UnregisterOwner(this);
 }
 
 ETabSpawnerMenuType::Type FValidatorXModule::GetVisibleModule() const

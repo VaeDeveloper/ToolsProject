@@ -74,7 +74,7 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 
 # temp_folder
-env_temp_folder/*
+enc_temp_folder/*
 enc_temp_folder/e13c52ac34fc7a5d32c695d4c5d2db/SStatCommandGrid.h
 enc_temp_folder/de23ecdc5d872a18f06e278791c97ad8/SDataAssetManagerWidget.h
 enc_temp_folder/6bad1b133ab4c051c34ac22a1b918fe5/ToolsProjectEditor.cpp

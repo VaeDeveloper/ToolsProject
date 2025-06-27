@@ -62,13 +62,14 @@ EDataValidationResult ULocalVariableNeverUsedValidator::ValidateLoadedAsset_Impl
              for(const FBPVariableDescription& LocalVar : EntryNode->LocalVariables)
              {
                  bool bUsed = false;
-     
+
                  for(UEdGraphNode* Node : Graph->Nodes)
                  {
                      if(const UK2Node_VariableGet* VarGet = Cast<UK2Node_VariableGet>(Node))
                      {
                          if(VarGet->GetVarName() == LocalVar.VarName)
                          {
+                             
                              bUsed = true;
                              break;
                          }
@@ -77,6 +78,7 @@ EDataValidationResult ULocalVariableNeverUsedValidator::ValidateLoadedAsset_Impl
                      {
                          if(VarSet->GetVarName() == LocalVar.VarName)
                          {
+                             
                              bUsed = true;
                              break;
                          }

@@ -6,7 +6,7 @@
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "BlueprintEditor.h"
 #include "Misc/DataValidation.h"
-
+#include "SMyBlueprint.h"
 UUnusedMacroValidator::UUnusedMacroValidator()
 {
 	SetValidationEnabled(true);
@@ -83,9 +83,16 @@ EDataValidationResult UUnusedMacroValidator::ValidateLoadedAsset_Implementation(
 									AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
 									if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
 									{
-										if(IBlueprintEditor* BlueprintEditor = StaticCast<IBlueprintEditor*>(EditorInstance))
+										if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
 										{
 											BlueprintEditor->OpenGraphAndBringToFront(MacroGraph, true);
+											if(TSharedPtr<SMyBlueprint> MyBlueprintWidget = BlueprintEditor->GetMyBlueprintWidget())
+											{
+												MyBlueprintWidget->SelectItemByName(MacroGraph->GetFName(),
+													ESelectInfo::Direct,
+													INDEX_NONE,
+													false);
+											}
 										}
 									}
 								}

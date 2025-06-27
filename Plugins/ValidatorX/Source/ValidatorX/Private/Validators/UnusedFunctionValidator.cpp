@@ -6,7 +6,7 @@
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "BlueprintEditor.h"
 #include "Misc/DataValidation.h"
-
+#include "SMyBlueprint.h"
 UUnusedFunctionValidator::UUnusedFunctionValidator()
 {
     SetValidationEnabled(true);
@@ -39,7 +39,9 @@ EDataValidationResult UUnusedFunctionValidator::ValidateLoadedAsset_Implementati
 
         for(UEdGraph* FunctionGraph : Blueprint->FunctionGraphs)
         {
+            
             if(!FunctionGraph) continue;
+
 
             const FName FunctionName = FunctionGraph->GetFName();
             bool bIsFunctionUsed = false;
@@ -98,6 +100,14 @@ EDataValidationResult UUnusedFunctionValidator::ValidateLoadedAsset_Implementati
                                         if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
                                         {
                                             BlueprintEditor->OpenGraphAndBringToFront(FunctionGraph, true);
+
+                                            if(TSharedPtr<SMyBlueprint> MyBlueprintWidget = BlueprintEditor->GetMyBlueprintWidget())
+                                            {
+                                                MyBlueprintWidget->SelectItemByName(FunctionGraph->GetFName(),
+                                                    ESelectInfo::Direct,
+                                                    INDEX_NONE,
+                                                    false);
+                                            }
                                         }
                                     }
                                 }

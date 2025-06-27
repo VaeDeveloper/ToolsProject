@@ -29,6 +29,7 @@ protected:
 	TSharedRef<SDockTab> OnSpawnValidatorXTab(const FSpawnTabArgs& Args);
 
 	virtual void OpenManagerTab() override;
+	void RegisterMenus();
 
 	/** Validators */
 	TArray <TSharedPtr<UBlueprintValidatorBase>> Validators;

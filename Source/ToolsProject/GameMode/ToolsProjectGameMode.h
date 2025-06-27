@@ -14,8 +14,7 @@ class TOOLSPROJECT_API AToolsProjectGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
-public:
-	AToolsProjectGameMode();
+
 
 	
 };

@@ -5,6 +5,7 @@
 #include "K2Node_VariableSet.h"
 #include "Misc/DataValidation.h"
 #include "BlueprintEditor.h"
+
 UDefaultAssignmentValidator::UDefaultAssignmentValidator()
 {
     SetValidationEnabled(true);

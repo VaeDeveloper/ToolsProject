@@ -42,7 +42,8 @@ public class ValidatorX : ModuleRules
 				"DataValidation",
 				"EditorStyle", 
 				"LevelEditor",
-				"InputCore"
+				"InputCore",
+				"ToolMenus"
 			}
 			);
 		
