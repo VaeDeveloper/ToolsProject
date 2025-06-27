@@ -142,14 +142,12 @@ namespace ValidatorX
 
 		for(UEdGraphPin* Pin : Node->Pins)
 		{
-			// Если есть вход или выход — макро используется
 			if(!Pin->LinkedTo.IsEmpty())
 			{
 				return false;
 			}
 		}
 
-		// Нет ни входов, ни выходов — значит, не используется
 		return true;
 	}
 
