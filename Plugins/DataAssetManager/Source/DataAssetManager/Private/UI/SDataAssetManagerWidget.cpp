@@ -119,12 +119,12 @@ namespace DataAssetManager
 		{
 			if (Assets.Num() == 0)
 			{
-				UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s No assets to delete!"), *FString(__FUNCTION__));
+				UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s No assets to delete!"), ANSI_TO_TCHAR(__FUNCTION__));
 				return false;
 			}
 
 			int32 DeletedCount = ObjectTools::DeleteAssets(Assets);
-			UE_LOG(SDataAssetManagerWidgetLog, Log, TEXT("%s Deleted %d assets"),*FString(__FUNCTION__), DeletedCount);
+			UE_LOG(SDataAssetManagerWidgetLog, Log, TEXT("%s Deleted %d assets"), ANSI_TO_TCHAR(__FUNCTION__), DeletedCount);
 
 			return DeletedCount > 0;
 		}
@@ -165,7 +165,7 @@ namespace DataAssetManager
 		{
 			if (!AssetClass || !AssetClass->IsChildOf(UDataAsset::StaticClass()))
 			{
-				UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Invalid class provided for DataAsset creation."), *FString(__FUNCTION__));
+				UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Invalid class provided for DataAsset creation."), ANSI_TO_TCHAR(__FUNCTION__));
 				return;
 			}
 
@@ -184,6 +184,7 @@ namespace DataAssetManager
 				FSoftObjectPath(ExistingPackageName + TEXT(".") + FPaths::GetBaseFilename(ExistingPackageName))
 			).IsValid())
 			{
+				/** Ensure unique asset name to avoid collision with existing assets */
 				ExistingPackageName = AssetPath + TEXT("/") + BaseAssetName + FString::Printf(TEXT("_%d"), Suffix);
 				ExistingPackageName = FPackageName::ObjectPathToPackageName(ExistingPackageName);
 				Suffix++;
@@ -212,6 +213,7 @@ namespace DataAssetManager
 		static void ProcessAssetData(const TArray<FAssetData>& RefAssetData, TFunction<void(const TArray<FAssetIdentifier>&)> ProcessFunction)
 		{
 			TArray<FAssetIdentifier> AssetIdentifiers;
+			/** Converts asset data to identifiers for reference viewer / size map / audit tools */
 			IAssetManagerEditorModule::ExtractAssetIdentifiersFromAssetDataList(RefAssetData, AssetIdentifiers);
 			ProcessFunction(AssetIdentifiers);
 		}
@@ -342,6 +344,7 @@ void SDataAssetManagerWidget::CopyToClipboard(bool bCopyPaths)
 
 	SelectedPackages.Sort([](const FAssetData& One, const FAssetData& Two)
 		{
+			/** Sort assets by package path for a consistent clipboard order */
 			return One.PackagePath.Compare(Two.PackagePath) < 0;
 		});
 
@@ -556,27 +559,26 @@ public:
 							{ 
 								if (OnCreateContextMenu.IsBound() && MouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
 								{
-								    OnCreateContextMenu.Execute(InGeometry, MouseEvent);
+									OnCreateContextMenu.Execute(InGeometry, MouseEvent);
 									return FReply::Handled();
 								}
 
 								if (MouseButtonDown.IsBound())
 								{
-								    return MouseButtonDown.Execute(InGeometry, MouseEvent);
+									return MouseButtonDown.Execute(InGeometry, MouseEvent);
 								}
 						
-                                return FReply::Unhandled();
+								return FReply::Unhandled();
 							}
 						)
 						.OnMouseDoubleClick_Lambda([this](const FGeometry& InGeometry, const FPointerEvent& MouseEvent)
 							{
 								if (OnAssetDoubleClicked.IsBound())
 								{
-								    OnAssetDoubleClicked.Execute(InGeometry, MouseEvent);
+									OnAssetDoubleClicked.Execute(InGeometry, MouseEvent);
 									return FReply::Handled();
 								}
 								return FReply::Unhandled();
-                                
 							}
 						)
 					]
@@ -635,6 +637,7 @@ public:
 	{
 		if (DirtyBrushWidget.IsValid())
 		{
+			/**  Show dirty (unsaved) badge if the asset's package is marked dirty */
 			DirtyBrushWidget->SetVisibility(bIsDirty ? EVisibility::Visible : EVisibility::Collapsed);
 		}
 	}
@@ -939,7 +942,7 @@ void SDataAssetManagerWidget::HandleAssetRename(TSharedPtr<FAssetData> AssetData
 		bRenamedProgress = false;
 		return;
 	}
-	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s EditableTextWidgets counts %d"), *FString(__FUNCTION__), EditableTextWidgets.Num());
+	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s EditableTextWidgets counts %d"), ANSI_TO_TCHAR(__FUNCTION__), EditableTextWidgets.Num());
 
 	if (CommitMethod == ETextCommit::OnEnter)
 	{
@@ -955,6 +958,7 @@ void SDataAssetManagerWidget::HandleAssetRename(TSharedPtr<FAssetData> AssetData
 		IAssetTools& AssetTools = FModuleManager::GetModuleChecked<FAssetToolsModule>(DataAssetManager::ModuleName::AssetTools).Get();
 		if (AssetTools.RenameAssets({ FAssetRenameData(Asset, PackagePath, NewName) }))
 		{
+			/** Use AssetTools to ensure proper rename across disk, memory, and editor state */
 			bRenamedProgress = false;
 			UE_LOG(SDataAssetManagerWidgetLog, Log, TEXT("Asset renamed %s"), *Asset->GetName());
 		}
@@ -1165,7 +1169,7 @@ void SDataAssetManagerWidget::LoadDataAssets(const UDataAssetManagerSettings* Pl
 	const FTopLevelAssetPath DataAssetPath = UDataAsset::StaticClass()->GetClassPathName();
 	if (!AssetRegistry.GetAssetsByClass(DataAssetPath, AssetDataArray, true))
 	{
-		UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Failed to get assets by class"), *FString(__FUNCTION__));
+		UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Failed to get assets by class"), ANSI_TO_TCHAR(__FUNCTION__));
 		return;
 	}
 
@@ -1218,6 +1222,7 @@ void SDataAssetManagerWidget::UpdateFilteredAssetList()
 		const bool bMatchesType = ActiveFilters.Num() == 0 || ActiveFilters.Contains(AssetClassName);
 		const bool bNameMatches = SearchString.IsEmpty() || AssetData->AssetName.ToString().Contains(SearchString);
 
+		/** Filter assets by type and name substring (case-sensitive) */
 		if (bMatchesType && bNameMatches)
 		{
 			FilteredDataAssets.Add(AssetData);
@@ -1272,13 +1277,14 @@ void SDataAssetManagerWidget::InitializeAssetTypeComboBox(TArray<TSharedPtr<FAss
 			const FString AssetName = AssetData->AssetClassPath.GetAssetName().ToString();
 			if (!UniqueAssetNames.Contains(AssetName))
 			{
+				/** Avoid duplicate class names in filter combo box */
 				UniqueAssetNames.Add(AssetName);
 				ComboBoxAssetListItems.Add(MakeShared<FString>(AssetName));
 			}
 		}
 	}
 	// Debug !!!
-	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s FilteredDataAssets: %i"), *FString(__FUNCTION__), FilteredDataAssets.Num());
+	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s FilteredDataAssets: %i"), ANSI_TO_TCHAR(__FUNCTION__), FilteredDataAssets.Num());
 }
 
 void SDataAssetManagerWidget::FocusOnNewlyAddedAsset(const FAssetData& NewAssetData)
@@ -1296,7 +1302,7 @@ void SDataAssetManagerWidget::FocusOnNewlyAddedAsset(const FAssetData& NewAssetD
 	if (!NewAssetPtr.IsValid())
 	{
 		UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Newly added asset '%s' not found in filtered list"), 
-			*FString(__FUNCTION__), *NewAssetData.PackageName.ToString());
+			ANSI_TO_TCHAR(__FUNCTION__), *NewAssetData.PackageName.ToString());
 		return;
 	}
 
@@ -1304,15 +1310,17 @@ void SDataAssetManagerWidget::FocusOnNewlyAddedAsset(const FAssetData& NewAssetD
 	{
 		if (AssetObject->HasAnyFlags(RF_NeedLoad | RF_NeedPostLoad))
 		{
+			/**	Avoid using assets that are not fully loaded.*/
+			/**	Accessing such objects could result in crashes or undefined behavior.*/
 			UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s: Asset '%s' is not fully loaded (flags: %X)"), 
-				*FString(__FUNCTION__), *AssetObject->GetName(), AssetObject->GetFlags());
+				ANSI_TO_TCHAR(__FUNCTION__), *AssetObject->GetName(), AssetObject->GetFlags());
 			return;
 		}
 	}
 	else
 	{
 		UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s: Failed to load asset '%s'"), 
-			*FString(__FUNCTION__), *NewAssetData.PackageName.ToString());
+			ANSI_TO_TCHAR(__FUNCTION__), *NewAssetData.PackageName.ToString());
 		return;
 	}
 
@@ -1563,7 +1571,7 @@ void SDataAssetManagerWidget::FocusOnSelectedAsset()
 {
 	if (!IsSelectedAssetValid()) return;
 
-	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s EditableTextWidgets counts %d"), *FString(__FUNCTION__), EditableTextWidgets.Num());
+	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s EditableTextWidgets counts %d"), ANSI_TO_TCHAR(__FUNCTION__), EditableTextWidgets.Num());
 
 	TSharedPtr<FAssetData> FoundAsset = nullptr;
 	for (const TSharedPtr<FAssetData>& DataAsset : FilteredDataAssets)
@@ -1637,6 +1645,7 @@ void SDataAssetManagerWidget::OpenDetailViewPanelForAsset(TSharedPtr<FAssetData>
 void SDataAssetManagerWidget::ProcessAssetData(const TArray<FAssetData>& RefAssetData, TFunction<void(const TArray<FAssetIdentifier>&)> ProcessFunction)
 {
 	TArray<FAssetIdentifier> AssetIdentifiers;
+	/** Converts asset data to identifiers for reference viewer / size map / audit tools */
 	IAssetManagerEditorModule::ExtractAssetIdentifiersFromAssetDataList(RefAssetData, AssetIdentifiers);
 	ProcessFunction(AssetIdentifiers);
 }
@@ -1649,7 +1658,7 @@ void SDataAssetManagerWidget::OnAssetAdded(const FAssetData& NewAssetData)
 
 	FocusOnNewlyAddedAsset(NewAssetData);
 
-	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Call Delegate"), *FString(__FUNCTION__));
+	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Call Delegate"), ANSI_TO_TCHAR(__FUNCTION__));
 }
 
 void SDataAssetManagerWidget::OnAssetRemoved(const FAssetData& AssetToRemoved)
@@ -1657,7 +1666,7 @@ void SDataAssetManagerWidget::OnAssetRemoved(const FAssetData& AssetToRemoved)
 	LoadDataAssets(DataAssetManager::Private::GetPluginSettings());
 	UpdateFilteredAssetList();
 	InitializeAssetTypeComboBox(DataAssets);
-	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Call Delegate"), *FString(__FUNCTION__));
+	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Call Delegate"), ANSI_TO_TCHAR(__FUNCTION__));
 }
 
 void SDataAssetManagerWidget::OnAssetRenamed(const FAssetData& NewAssetData, const FString& Name)
@@ -1667,7 +1676,7 @@ void SDataAssetManagerWidget::OnAssetRenamed(const FAssetData& NewAssetData, con
 	InitializeAssetTypeComboBox(DataAssets);
 
 	FocusOnNewlyAddedAsset(NewAssetData);
-	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Call Delegate"), *FString(__FUNCTION__));
+	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s Call Delegate"), ANSI_TO_TCHAR(__FUNCTION__));
 }
 
 void SDataAssetManagerWidget::DeleteDataAsset()
@@ -1810,7 +1819,7 @@ bool SDataAssetManagerWidget::IsSelectedAssetValid(const FString& CustomMessage)
 	if (SelectedAsset.IsValid()) return true;
 
 	const FString ErrorMsg = CustomMessage.IsEmpty() 
-		? FString::Printf(TEXT("%s Selected Asset is not valid"), *FString(__FUNCTION__))
+		? FString::Printf(TEXT("%s Selected Asset is not valid"), ANSI_TO_TCHAR(__FUNCTION__))
 		: CustomMessage;
 
 	UE_LOG(SDataAssetManagerWidgetLog, Warning, TEXT("%s"), *ErrorMsg);
