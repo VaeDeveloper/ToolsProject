@@ -11,7 +11,6 @@
 ULocalGlobalNameConflictValidator::ULocalGlobalNameConflictValidator()
 {
 	SetValidationEnabled(true);
-
 }
 
 bool ULocalGlobalNameConflictValidator::CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) const

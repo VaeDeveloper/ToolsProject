@@ -7,9 +7,12 @@
 #include "BlueprintEditor.h"
 #include "Misc/DataValidation.h"
 #include "SMyBlueprint.h"
+#include "Library/BPUtilsNodeFunctionLibrary.h"
+
+
 UUnusedFunctionValidator::UUnusedFunctionValidator()
 {
-    SetValidationEnabled(true);
+	SetValidationEnabled(true);
 }
 
 bool UUnusedFunctionValidator::CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& InContext) const
@@ -19,148 +22,168 @@ bool UUnusedFunctionValidator::CanValidateAsset_Implementation(const FAssetData&
 
 bool UUnusedFunctionValidator::IsEnabled() const
 {
-    static const UUnusedFunctionValidator* CDO = GetDefault<UUnusedFunctionValidator>();
-    return CDO->bIsEnabled && !bIsConfigDisabled;
+	static const UUnusedFunctionValidator* CDO = GetDefault<UUnusedFunctionValidator>();
+	return CDO->bIsEnabled && !bIsConfigDisabled;
 }
 
-EDataValidationResult UUnusedFunctionValidator::ValidateLoadedAsset_Implementation(
-    const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& Context)
+EDataValidationResult UUnusedFunctionValidator::ValidateLoadedAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& Context)
 {
-    bIsError = false;
+	bIsError = false;
 
-    if(UBlueprint* Blueprint = Cast<UBlueprint>(InAsset))
-    {
-        TArray<UEdGraph*> AllGraphs;
-        AllGraphs.Append(Blueprint->UbergraphPages);
-        AllGraphs.Append(Blueprint->FunctionGraphs);
-        AllGraphs.Append(Blueprint->MacroGraphs);
-        AllGraphs.Append(Blueprint->DelegateSignatureGraphs);
-        AllGraphs.Append(Blueprint->IntermediateGeneratedGraphs);
+	if(UBlueprint* Blueprint = Cast<UBlueprint>(InAsset))
+	{
+		TArray<UEdGraph*> AllGraphs;
+		Blueprint->GetAllGraphs(AllGraphs);
 
-        for(UEdGraph* FunctionGraph : Blueprint->FunctionGraphs)
-        {
-            
-            if(!FunctionGraph) continue;
+		for(UEdGraph* FunctionGraph : Blueprint->FunctionGraphs)
+		{
+			if(!FunctionGraph) continue;
 
+			const FName FunctionName = FunctionGraph->GetFName();
+			if(FunctionName == UEdGraphSchema_K2::FN_UserConstructionScript) continue;
 
-            const FName FunctionName = FunctionGraph->GetFName();
-            bool bIsFunctionUsed = false;
+			bool bIsFunctionUsed = false;
 
-            if(FunctionName == UEdGraphSchema_K2::FN_UserConstructionScript)
-            {
-                continue;
-            }
+			// 1. Search in this blueprint
+			for(UEdGraph* Graph : AllGraphs)
+			{
+				if(!Graph || Graph == FunctionGraph) continue;
 
-            for(UEdGraph* Graph : AllGraphs)
-            {
-                if(!Graph || Graph == FunctionGraph) continue;
+				for(UEdGraphNode* Node : Graph->Nodes)
+				{
+					if(const UK2Node_CallFunction* CallFunctionNode = Cast<UK2Node_CallFunction>(Node))
+					{
+						if(CallFunctionNode->FunctionReference.GetMemberName() == FunctionName)
+						{
+							bIsFunctionUsed = true;
+							break;
+						}
+					}
+				}
+				if(bIsFunctionUsed) break;
+			}
 
-                for(UEdGraphNode* Node : Graph->Nodes)
-                {
-                    if(const UK2Node_CallFunction* CallFunctionNode = Cast<UK2Node_CallFunction>(Node))
-                    {
-                        if(CallFunctionNode->FunctionReference.GetMemberName() == FunctionName)
-                        {
-                            bIsFunctionUsed = true;
-                            break;
-                        }
-                    }
-                }
+			// 2. Search in child blueprints 
+			if(!bIsFunctionUsed && Blueprint->GeneratedClass)
+			{
+				TArray<UClass*> DerivedClasses;
+				UBPUtilsNodeFunctionLibrary::GetAllDerivedBlueprintClasses(Blueprint->GeneratedClass, DerivedClasses, true);
 
-                if(bIsFunctionUsed)
-                {
-                    break;
-                }
-            }
+				for(UClass* ChildClass : DerivedClasses)
+				{
+					UBlueprint* ChildBP = Cast<UBlueprint>(ChildClass->ClassGeneratedBy);
+					if(!ChildBP) continue;
 
-            if(!bIsFunctionUsed)
-            {
-                const FText MessageText = FText::Format(
-                    INVTEXT("Function '{0}' in Blueprint '{1}' is never used."),
-                    FText::FromName(FunctionName),
-                    FText::FromString(Blueprint->GetName())
-                );
+					TArray<UEdGraph*> ChildGraphs;
+					ChildBP->GetAllGraphs(ChildGraphs);
 
-                const TSharedRef<FTokenizedMessage> Message = Context.AddMessage(EMessageSeverity::Warning, MessageText);
+					for(UEdGraph* Graph : ChildGraphs)
+					{
+						for(UEdGraphNode* Node : Graph->Nodes)
+						{
+							if(const UK2Node_CallFunction* CallFunctionNode = Cast<UK2Node_CallFunction>(Node))
+							{
+								if(CallFunctionNode->FunctionReference.GetMemberName() == FunctionName)
+								{
+									bIsFunctionUsed = true;
+									break;
+								}
+							}
+						}
+						if(bIsFunctionUsed) break;
+					}
+					if(bIsFunctionUsed) break;
+				}
+			}
 
-                const FText JumpToFunctionText = FText::Format(
-                    INVTEXT("Jump to Function - '{0}'"),
-                    FText::FromName(FunctionName));
+			if(!bIsFunctionUsed)
+			{
+				const FText MessageText = FText::Format(
+					INVTEXT("Function '{0}' in Blueprint '{1}' is never used."),
+					FText::FromName(FunctionName),
+					FText::FromString(Blueprint->GetName())
+				);
 
-                Message->AddToken(FActionToken::Create(JumpToFunctionText, FText::GetEmpty(),
-                    FSimpleDelegate::CreateLambda([=]
-                        {
-                            if(Blueprint && FunctionGraph)
-                            {
-                                if(UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>())
-                                {
-                                    AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
-                                    if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
-                                    {
-                                        if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
-                                        {
-                                            BlueprintEditor->OpenGraphAndBringToFront(FunctionGraph, true);
+				const TSharedRef<FTokenizedMessage> Message = Context.AddMessage(EMessageSeverity::Warning, MessageText);
 
-                                            if(TSharedPtr<SMyBlueprint> MyBlueprintWidget = BlueprintEditor->GetMyBlueprintWidget())
-                                            {
-                                                MyBlueprintWidget->SelectItemByName(FunctionGraph->GetFName(),
-                                                    ESelectInfo::Direct,
-                                                    INDEX_NONE,
-                                                    false);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        })));
+				const FText JumpToFunctionText = FText::Format(
+					INVTEXT("Jump to Function - '{0}'"),
+					FText::FromName(FunctionName));
 
-                const FText DeleteFunctionText = FText::Format(
-                    INVTEXT("'Fix' - Delete Function - '{0}'"),
-                    FText::FromName(FunctionName));
+				Message->AddToken(FActionToken::Create(JumpToFunctionText, FText::GetEmpty(),
+					FSimpleDelegate::CreateLambda([=]
+						{
+							if(Blueprint && FunctionGraph)
+							{
+								if(UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>())
+								{
+									AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
+									if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
+									{
+										if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
+										{
+											BlueprintEditor->OpenGraphAndBringToFront(FunctionGraph, true);
 
-                Message->AddToken(FActionToken::Create(DeleteFunctionText, FText::GetEmpty(),
-                    FSimpleDelegate::CreateLambda([=]
-                        {
-                            if(Blueprint && FunctionGraph)
-                            {
-                                if(UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>())
-                                {
-                                    AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
+											if(TSharedPtr<SMyBlueprint> MyBlueprintWidget = BlueprintEditor->GetMyBlueprintWidget())
+											{
+												MyBlueprintWidget->SelectItemByName(FunctionGraph->GetFName(),
+													ESelectInfo::Direct,
+													INDEX_NONE,
+													false);
+											}
+										}
+									}
+								}
+							}
+						})));
 
-                                    FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([=] (float DeltaTime)
-                                        {
-                                            if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
-                                            {
-                                                if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
-                                                {
-                                                    const FText ConfirmText = FText::Format(
-                                                        INVTEXT("Are you sure you want to delete the unused Function '{0}' from Blueprint '{1}'?"),
-                                                        FText::FromName(FunctionName),
-                                                        FText::FromString(Blueprint->GetName())
-                                                    );
+				const FText DeleteFunctionText = FText::Format(
+					INVTEXT("'Fix' - Delete Function - '{0}'"),
+					FText::FromName(FunctionName));
 
-                                                    if(FMessageDialog::Open(EAppMsgType::YesNo, ConfirmText) == EAppReturnType::Yes)
-                                                    {
-                                                        Blueprint->Modify();
+				Message->AddToken(FActionToken::Create(DeleteFunctionText, FText::GetEmpty(),
+					FSimpleDelegate::CreateLambda([=]
+						{
+							if(Blueprint && FunctionGraph)
+							{
+								if(UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>())
+								{
+									AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
 
-                                                        Blueprint->FunctionGraphs.Remove(FunctionGraph);
-                                                        FunctionGraph->Modify();
-                                                        FunctionGraph->MarkAsGarbage();
+									FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([=] (float DeltaTime)
+										{
+											if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
+											{
+												if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
+												{
+													const FText ConfirmText = FText::Format(
+														INVTEXT("Are you sure you want to delete the unused Function '{0}' from Blueprint '{1}'?"),
+														FText::FromName(FunctionName),
+														FText::FromString(Blueprint->GetName())
+													);
 
-                                                        FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
-                                                    }
-                                                }
-                                            }
-                                            return false;
-                                        }));
-                                }
-                            }
-                        })));
+													if(FMessageDialog::Open(EAppMsgType::YesNo, ConfirmText) == EAppReturnType::Yes)
+													{
+														Blueprint->Modify();
 
-                bIsError = true;
-            }
-        }
-    }
+														Blueprint->FunctionGraphs.Remove(FunctionGraph);
+														FunctionGraph->Modify();
+														FunctionGraph->MarkAsGarbage();
 
-    return bIsError ? EDataValidationResult::Invalid : EDataValidationResult::Valid;
+														FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
+													}
+												}
+											}
+											return false;
+										}));
+								}
+							}
+						})));
+
+				bIsError = true;
+			}
+		}
+	}
+
+	return bIsError ? EDataValidationResult::Invalid : EDataValidationResult::Valid;
 }

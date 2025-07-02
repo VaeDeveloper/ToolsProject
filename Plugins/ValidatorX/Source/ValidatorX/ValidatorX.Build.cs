@@ -43,7 +43,8 @@ public class ValidatorX : ModuleRules
 				"EditorStyle", 
 				"LevelEditor",
 				"InputCore",
-				"ToolMenus"
+				"ToolMenus",
+				"AssetRegistry"
 			}
 			);
 		

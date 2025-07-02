@@ -7,6 +7,7 @@
 #include "BlueprintEditor.h"
 #include "Misc/DataValidation.h"
 #include "SMyBlueprint.h"
+
 UUnusedMacroValidator::UUnusedMacroValidator()
 {
 	SetValidationEnabled(true);
@@ -30,11 +31,7 @@ EDataValidationResult UUnusedMacroValidator::ValidateLoadedAsset_Implementation(
 	if (UBlueprint* Blueprint = Cast<UBlueprint>(InAsset))
 	{
 		TArray<UEdGraph*> AllGraphs;
-		AllGraphs.Append(Blueprint->UbergraphPages);
-		AllGraphs.Append(Blueprint->FunctionGraphs);
-		AllGraphs.Append(Blueprint->MacroGraphs);
-		AllGraphs.Append(Blueprint->DelegateSignatureGraphs);
-		AllGraphs.Append(Blueprint->IntermediateGeneratedGraphs);
+		Blueprint->GetAllGraphs(AllGraphs);
 
 		for(UEdGraph* MacroGraph : Blueprint->MacroGraphs)
 		{
@@ -64,6 +61,7 @@ EDataValidationResult UUnusedMacroValidator::ValidateLoadedAsset_Implementation(
 					break;
 				}
 			}
+
 
 			if(!bIsMacroUsed)
 			{

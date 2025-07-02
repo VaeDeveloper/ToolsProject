@@ -27,120 +27,138 @@ bool UGlobalVariableNeverUsedValidator::CanValidateAsset_Implementation(const FA
 
 EDataValidationResult UGlobalVariableNeverUsedValidator::ValidateLoadedAsset_Implementation(const FAssetData& InAssetData, UObject* InAsset, FDataValidationContext& Context)
 {
-    bIsError = false;
+	bIsError = false;
 
-    if(UBlueprint* Blueprint = Cast<UBlueprint>(InAsset))
-    {
-        const TArray<FBPVariableDescription>& Variables = Blueprint->NewVariables;
+	if(UBlueprint* Blueprint = Cast<UBlueprint>(InAsset))
+	{
+		const TArray<FBPVariableDescription>& Variables = Blueprint->NewVariables;
 
-        TArray<UEdGraph*> AllGraphs;
-        Blueprint->GetAllGraphs(AllGraphs);
+		TArray<UEdGraph*> AllGraphs;
+		Blueprint->GetAllGraphs(AllGraphs);
 
-        for(const FBPVariableDescription& VarDesc : Variables)
-        {
-            bool bUsed = false;
+		for(const FBPVariableDescription& VarDesc : Variables)
+		{
+			bool bUsed = false;
 
-            for(UEdGraph* Graph : AllGraphs)
-            {
-                if(!Graph) continue;
+			// Use case 1: Exposed on spawn or Config flags
+			if(UClass* GenClass = Blueprint->GeneratedClass)
+			{
+				if(FProperty* Prop = GenClass->FindPropertyByName(VarDesc.VarName))
+				{
+					if(Prop->HasAnyPropertyFlags(CPF_ExposeOnSpawn | CPF_Config | CPF_Interp))
+					{
+						bUsed = true;
+					}
+				}
+			}
 
-                for(UEdGraphNode* Node : Graph->Nodes)
-                {
-                    if(const UK2Node_VariableGet* VarGet = Cast<UK2Node_VariableGet>(Node))
-                    {
-                        if(VarGet->GetVarName() == VarDesc.VarName)
-                        {
-                            bUsed = true;
-                            break;
-                        }
-                    }
-                    else if(const UK2Node_VariableSet* VarSet = Cast<UK2Node_VariableSet>(Node))
-                    {
-                        if(VarSet->GetVarName() == VarDesc.VarName)
-                        {
-                            bUsed = true;
-                            break;
-                        }
-                    }
-                }
+			// Use case 2: Explicitly used in graphs
+			if(!bUsed)
+			{
+				for(UEdGraph* Graph : AllGraphs)
+				{
+					if(!Graph) continue;
 
-                if(bUsed) break;
-            }
+					for(UEdGraphNode* Node : Graph->Nodes)
+					{
+						if(const UK2Node_VariableGet* VarGet = Cast<UK2Node_VariableGet>(Node))
+						{
+							if(VarGet->GetVarName() == VarDesc.VarName)
+							{
+								bUsed = true;
+								break;
+							}
+						}
+						else if(const UK2Node_VariableSet* VarSet = Cast<UK2Node_VariableSet>(Node))
+						{
+							if(VarSet->GetVarName() == VarDesc.VarName)
+							{
+								bUsed = true;
+								break;
+							}
+						}
+					}
 
-            if(!bUsed)
-            {
-                const FText MessageText = FText::Format(
-                    INVTEXT("Variable '{0}' in Blueprint '{1}' is never used."),
-                    FText::FromName(VarDesc.VarName),
-                    FText::FromString(Blueprint->GetName())
-                );
+					if(bUsed) break;
+				}
+			}
 
-                const TSharedRef<FTokenizedMessage> Message = Context.AddMessage(EMessageSeverity::Warning, MessageText);
+			// Unused variable
+			if(!bUsed)
+			{
+				const FText MessageText = FText::Format(
+					INVTEXT("Variable '{0}' in Blueprint '{1}' is never used."),
+					FText::FromName(VarDesc.VarName),
+					FText::FromString(Blueprint->GetName())
+				);
 
-                // Jump to variable
-                Message->AddToken(FActionToken::Create(
-                    FText::Format(INVTEXT("Jump to Variable - '{0}'"), FText::FromName(VarDesc.VarName)),
-                    FText::GetEmpty(),
-                    FSimpleDelegate::CreateLambda([=]
-                        {
-                            if(Blueprint)
-                            {
-                                UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>();
-                                AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
+				const TSharedRef<FTokenizedMessage> Message = Context.AddMessage(EMessageSeverity::Warning, MessageText);
 
-                                if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
-                                {
-                                    if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
-                                    {
-                                        if(TSharedPtr<SMyBlueprint> MyBlueprintWidget = BlueprintEditor->GetMyBlueprintWidget())
-                                        {
-                                            MyBlueprintWidget->SelectItemByName(VarDesc.VarName, ESelectInfo::Direct, INDEX_NONE, false);
-                                        }
-                                    }
-                                }
-                            }
-                        })));
+				// Jump to variable
+				Message->AddToken(FActionToken::Create(
+					FText::Format(INVTEXT("Jump to Variable - '{0}'"), FText::FromName(VarDesc.VarName)),
+					FText::GetEmpty(),
+					FSimpleDelegate::CreateLambda([=]
+						{
+							if(Blueprint)
+							{
+								UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>();
+								AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
 
-                // Fix - delete variable
-                Message->AddToken(FActionToken::Create(
-                    FText::Format(INVTEXT("'Fix' - Delete Variable - '{0}'"), FText::FromName(VarDesc.VarName)),
-                    FText::GetEmpty(),
-                    FSimpleDelegate::CreateLambda([=]
-                        {
-                            if(Blueprint)
-                            {
-                                UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>();
-                                AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
+								if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
+								{
+									if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
+									{
+										if(TSharedPtr<SMyBlueprint> MyBlueprintWidget = BlueprintEditor->GetMyBlueprintWidget())
+										{
+											MyBlueprintWidget->SelectItemByName(VarDesc.VarName, ESelectInfo::Direct, INDEX_NONE, false);
+										}
+									}
+								}
+							}
+						}))
+				);
 
-                                FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([=] (float DeltaTime)
-                                    {
-                                        if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
-                                        {
-                                            if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
-                                            {
-                                                const FText ConfirmText = FText::Format(
-                                                    INVTEXT("Are you sure you want to delete variable '{0}' from Blueprint '{1}'?"),
-                                                    FText::FromName(VarDesc.VarName),
-                                                    FText::FromString(Blueprint->GetName())
-                                                );
+				// Fix: delete variable
+				Message->AddToken(FActionToken::Create(
+					FText::Format(INVTEXT("Fix - Delete Variable - '{0}'"), FText::FromName(VarDesc.VarName)),
+					FText::GetEmpty(),
+					FSimpleDelegate::CreateLambda([=]
+						{
+							if(Blueprint)
+							{
+								UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>();
+								AssetEditorSubsystem->OpenEditorForAsset(Blueprint);
 
-                                                if(FMessageDialog::Open(EAppMsgType::YesNo, ConfirmText) == EAppReturnType::Yes)
-                                                {
-                                                    FBlueprintEditorUtils::RemoveMemberVariable(Blueprint, VarDesc.VarName);
-                                                    FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
-                                                }
-                                            }
-                                        }
+								FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([=] (float)
+									{
+										if(IAssetEditorInstance* EditorInstance = AssetEditorSubsystem->FindEditorForAsset(Blueprint, false))
+										{
+											if(FBlueprintEditor* BlueprintEditor = StaticCast<FBlueprintEditor*>(EditorInstance))
+											{
+												const FText ConfirmText = FText::Format(
+													INVTEXT("Are you sure you want to delete variable '{0}' from Blueprint '{1}'?"),
+													FText::FromName(VarDesc.VarName),
+													FText::FromString(Blueprint->GetName())
+												);
 
-                                        return false;
-                                    }));
-                            }
-                        })));
+												if(FMessageDialog::Open(EAppMsgType::YesNo, ConfirmText) == EAppReturnType::Yes)
+												{
+													FBlueprintEditorUtils::RemoveMemberVariable(Blueprint, VarDesc.VarName);
+													FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
+												}
+											}
+										}
+										return false;
+									}));
+							}
+						}))
+				);
 
-                bIsError = true;
-            }
-        }
-    }
+				bIsError = true;
+			}
+		}
+	}
 
-    return bIsError ? EDataValidationResult::Invalid : EDataValidationResult::Valid;
+	return bIsError ? EDataValidationResult::Invalid : EDataValidationResult::Valid;
 }
